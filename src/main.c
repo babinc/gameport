@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <time.h>
 
 static volatile int g_resize = 0;
 
@@ -29,84 +30,10 @@ static void start_cargo_uninstall(App *app, const Source *src) {
     child_start(&app->child, src->uninstall_cmd, NULL);
 }
 
-static void start_cmake_install(App *app, const Source *src) {
-    /* For cmake games, we need to orchestrate: clone repo, copy source, cmake, build.
-       We use a helper shell script approach: run our internal cmake-game command.
-       Since we don't have the internal commands as binaries, we'll do it inline
-       by spawning a shell with the full build script. */
-    char *gdir = games_dir();
-
-    /* Build a shell script that does the cmake dance */
-    char script[4096];
-    snprintf(script, sizeof(script),
-        "set -e\n"
-        "GAMES_DIR='%s'\n"
-        "NAME='%s'\n"
-        "SRC_REL='%s'\n"
-        "REPO_DIR=\"$GAMES_DIR/raylib-games\"\n"
-        "GAME_DIR=\"$GAMES_DIR/$NAME\"\n"
-        "mkdir -p \"$GAME_DIR\"\n"
-        "\n"
-        "# Clone raylib-games repo if needed\n"
-        "if [ ! -d \"$REPO_DIR/.git\" ]; then\n"
-        "  echo 'Cloning raylib-games repo (shallow)...'\n"
-        "  git clone --depth 1 https://github.com/raysan5/raylib-games.git \"$REPO_DIR\"\n"
-        "else\n"
-        "  echo 'Source repo already cloned.'\n"
-        "fi\n"
-        "\n"
-        "# Copy source file\n"
-        "echo \"Copying $SRC_REL...\"\n"
-        "cp \"$REPO_DIR/$SRC_REL\" \"$GAME_DIR/$NAME.c\"\n"
-        "\n"
-        "# Write CMakeLists.txt\n"
-        "cat > \"$GAME_DIR/CMakeLists.txt\" << 'CMAKEOF'\n"
-        "cmake_minimum_required(VERSION 3.14)\n"
-        "project(%s C)\n"
-        "include(FetchContent)\n"
-        "FetchContent_Declare(raylib GIT_REPOSITORY https://github.com/raysan5/raylib.git GIT_TAG 5.5 GIT_SHALLOW TRUE)\n"
-        "FetchContent_MakeAvailable(raylib)\n"
-        "add_executable(%s %s.c)\n"
-        "target_link_libraries(%s raylib)\n"
-        "if(WIN32)\n"
-        "  target_link_libraries(%s winmm)\n"
-        "endif()\n"
-        "CMAKEOF\n"
-        "echo 'Wrote CMakeLists.txt'\n"
-        "\n"
-        "echo ''\n"
-        "echo 'Configuring cmake (fetching raylib)...'\n"
-        "cd \"$GAME_DIR\"\n"
-        "cmake -B build -DCMAKE_BUILD_TYPE=Release\n"
-        "\n"
-        "echo ''\n"
-        "echo 'Building...'\n"
-        "cmake --build build --config Release\n"
-        "echo 'Build complete!'\n",
-        gdir, src->clone_dir, src->build_cmd[2], /* SRC_REL is 3rd element */
-        src->clone_dir, src->clone_dir, src->clone_dir,
-        src->clone_dir, src->clone_dir);
-    free(gdir);
-
-    const char *cmd[] = {"bash", "-c", script, NULL};
-    child_start(&app->child, cmd, NULL);
-}
-
-static void start_cmake_remove(App *app, const Source *src) {
-    char *gdir = games_dir();
-    char path[1024];
-    snprintf(path, sizeof(path), "%s/%s", gdir, src->clone_dir);
-    free(gdir);
-
-    char script[1024];
-    snprintf(script, sizeof(script), "echo 'Removing %s...' && rm -rf '%s' && echo 'Removed!'",
-             src->clone_dir, path);
-    const char *cmd[] = {"bash", "-c", script, NULL};
-    child_start(&app->child, cmd, NULL);
-}
-
 static void start_git_install(App *app, const Source *src) {
     char *gdir = games_dir();
+    char q_gdir[2048];
+    shell_quote(q_gdir, sizeof(q_gdir), gdir);
 
     /* Build a shell script for git clone + build */
     char script[4096];
@@ -121,7 +48,7 @@ static void start_git_install(App *app, const Source *src) {
 
     snprintf(script, sizeof(script),
         "set -e\n"
-        "GAMES_DIR='%s'\n"
+        "GAMES_DIR=%s\n"
         "NAME='%s'\n"
         "REPO='%s'\n"
         "GAME_DIR=\"$GAMES_DIR/$NAME\"\n"
@@ -138,9 +65,8 @@ static void start_git_install(App *app, const Source *src) {
         "cd \"$GAME_DIR\"\n"
         "%s%s%s\n"
         "\n"
-        "echo 'installed' > \"$GAME_DIR/.arcade-ready\"\n"
         "echo 'Game ready!'\n",
-        gdir, src->clone_dir, src->clone_url,
+        q_gdir, src->clone_dir, src->clone_url,
         src->shallow ? "--depth 1" : "",
         build_str[0] ? "echo 'Building...'\n" : "",
         build_str,
@@ -157,11 +83,91 @@ static void start_git_remove(App *app, const Source *src) {
     snprintf(path, sizeof(path), "%s/%s", gdir, src->clone_dir);
     free(gdir);
 
-    char script[1024];
-    snprintf(script, sizeof(script), "echo 'Removing %s...' && rm -rf '%s' && echo 'Removed!'",
-             src->clone_dir, path);
+    char q_path[2048];
+    shell_quote(q_path, sizeof(q_path), path);
+    char script[4096];
+    snprintf(script, sizeof(script), "echo 'Removing %s...' && rm -rf %s && echo 'Removed!'",
+             src->clone_dir, q_path);
     const char *cmd[] = {"bash", "-c", script, NULL};
     child_start(&app->child, cmd, NULL);
+}
+
+/* ── Close install/run panel ───────────────────────────────────── */
+
+/* Returns a static buffer with the log file path (valid until next call) */
+static const char *save_log_to_file(App *app) {
+    static char path[1024];
+    char *ldir = logs_dir();
+    time_t now = time(NULL);
+    struct tm *tm = localtime(&now);
+
+    /* Build sanitized game name (spaces -> underscores) */
+    char safe_name[128];
+    snprintf(safe_name, sizeof(safe_name), "%s", GAMES[app->active_game].name);
+    for (char *p = safe_name; *p; p++) {
+        if (*p == ' ') *p = '_';
+    }
+
+    snprintf(path, sizeof(path), "%s/%s_%04d%02d%02d_%02d%02d%02d.log",
+             ldir, safe_name,
+             tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+             tm->tm_hour, tm->tm_min, tm->tm_sec);
+    free(ldir);
+
+    FILE *f = fopen(path, "w");
+    if (f) {
+        for (int i = 0; i < app->child.output.count; i++)
+            fprintf(f, "%s\n", app->child.output.lines[i]);
+        fclose(f);
+        return path;
+    }
+    return NULL;
+}
+
+static void close_panel(App *app) {
+    int ok = app->child.ok;
+
+    /* Save log to file (before building in-memory log so path is excluded from file) */
+    const char *log_path = save_log_to_file(app);
+
+    /* Append log path to output so it shows in [L] view */
+    if (log_path) {
+        char note[1024 + 16]; /* path (max 1024) + "Log saved: " prefix */
+        snprintf(note, sizeof(note), "Log saved: %s", log_path);
+        linebuf_push(&app->child.output, note);
+    }
+
+    /* Save in-memory log for [L] key (single-pass to avoid O(n^2) strcat) */
+    free(app->last_log);
+    size_t total = 0;
+    for (int i = 0; i < app->child.output.count; i++)
+        total += strlen(app->child.output.lines[i]) + 1;
+    app->last_log = malloc(total + 1);
+    char *cursor = app->last_log;
+    for (int i = 0; i < app->child.output.count; i++) {
+        size_t len = strlen(app->child.output.lines[i]);
+        memcpy(cursor, app->child.output.lines[i], len);
+        cursor += len;
+        *cursor++ = '\n';
+    }
+    *cursor = '\0';
+
+    child_cleanup(&app->child);
+    app->child.pipe_fd = -1;
+    app->child.pid = 0;
+    app_refresh(app);
+    app_rebuild_filter(app);
+
+    if (ok) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "%s done!", GAMES[app->active_game].name);
+        app_set_message(app, msg, 1);
+    } else {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "%s failed. Press [L] for log.", GAMES[app->active_game].name);
+        app_set_message(app, msg, 0);
+    }
+    app->mode = MODE_NORMAL;
 }
 
 /* ── Main ─────────────────────────────────────────────────────── */
@@ -212,45 +218,19 @@ int main(void) {
             case KEY_DOWN:
                 app.panel_scroll++;
                 break;
-            case KEY_CHAR:
-                if (key.ch == 'j') app.panel_scroll++;
-                else if (key.ch == 'k' && app.panel_scroll > 0) app.panel_scroll--;
-                break;
             case KEY_UP:
                 if (app.panel_scroll > 0) app.panel_scroll--;
                 break;
+            case KEY_CHAR:
+                if (key.ch == 'j') app.panel_scroll++;
+                else if (key.ch == 'k' && app.panel_scroll > 0) app.panel_scroll--;
+                else if (app.child.done) close_panel(&app);
+                break;
             case KEY_ESC:
+            case KEY_ENTER:
                 if (app.child.done) {
-                    /* Save log */
-                    free(app.last_log);
-                    /* Build log string from output lines */
-                    size_t total = 0;
-                    for (int i = 0; i < app.child.output.count; i++)
-                        total += strlen(app.child.output.lines[i]) + 1;
-                    app.last_log = malloc(total + 1);
-                    app.last_log[0] = '\0';
-                    for (int i = 0; i < app.child.output.count; i++) {
-                        strcat(app.last_log, app.child.output.lines[i]);
-                        strcat(app.last_log, "\n");
-                    }
-
-                    int ok = app.child.ok;
-                    child_cleanup(&app.child);
-                    app.child.pipe_fd = -1;
-                    app.child.pid = 0;
-                    app_refresh(&app);
-                    app_rebuild_filter(&app);
-                    if (ok) {
-                        char msg[128];
-                        snprintf(msg, sizeof(msg), "%s done!", GAMES[app.active_game].name);
-                        app_set_message(&app, msg, 1);
-                    } else {
-                        char msg[128];
-                        snprintf(msg, sizeof(msg), "%s failed. Press [L] for log.", GAMES[app.active_game].name);
-                        app_set_message(&app, msg, 0);
-                    }
-                    app.mode = MODE_NORMAL;
-                } else if (app.mode == MODE_RUNNING) {
+                    close_panel(&app);
+                } else if (key.type == KEY_ESC && app.mode == MODE_RUNNING) {
                     child_kill(&app.child);
                     child_cleanup(&app.child);
                     app.child.pipe_fd = -1;
@@ -262,27 +242,7 @@ int main(void) {
                 }
                 break;
             default:
-                if (key.type == KEY_CHAR && key.ch == 'q') {
-                    if (app.child.done) {
-                        /* Same as Esc when done */
-                        free(app.last_log);
-                        size_t total = 0;
-                        for (int i = 0; i < app.child.output.count; i++)
-                            total += strlen(app.child.output.lines[i]) + 1;
-                        app.last_log = malloc(total + 1);
-                        app.last_log[0] = '\0';
-                        for (int i = 0; i < app.child.output.count; i++) {
-                            strcat(app.last_log, app.child.output.lines[i]);
-                            strcat(app.last_log, "\n");
-                        }
-                        child_cleanup(&app.child);
-                        app.child.pipe_fd = -1;
-                        app.child.pid = 0;
-                        app_refresh(&app);
-                        app_rebuild_filter(&app);
-                        app.mode = MODE_NORMAL;
-                    }
-                }
+                if (app.child.done) close_panel(&app);
                 break;
             }
             break;
@@ -367,7 +327,7 @@ int main(void) {
                 int gi = app.filtered[app.selected];
                 app.active_game = gi;
                 const Game *g = &GAMES[gi];
-                if (is_git_cloned_not_ready(g)) {
+                if (app.cloned[gi]) {
                     app_set_message(&app, "Cloned but not built. Press [i] to build.", 0);
                 } else if (!app.installed[gi]) {
                     app_set_message(&app, "Not installed. Press [i] to install.", 0);
@@ -408,14 +368,7 @@ int main(void) {
                         char cwd_buf[1024];
                         int ci = 0;
 
-                        if (strcmp(src->method, "cmake") == 0) {
-                            char *exe = cmake_game_exe(src);
-                            /* We need exe to persist — store in static-ish buffer */
-                            static char exe_buf[1024];
-                            snprintf(exe_buf, sizeof(exe_buf), "%s", exe);
-                            free(exe);
-                            cmd[ci++] = exe_buf;
-                        } else if (strcmp(src->method, "git") == 0) {
+                        if (src->method == METHOD_GIT) {
                             char *gdir = games_dir();
                             snprintf(cwd_buf, sizeof(cwd_buf), "%s/%s", gdir, src->clone_dir);
                             free(gdir);
@@ -502,7 +455,7 @@ int main(void) {
                     } else if (installing && !has_runtime(&app.toolchains, src->method)) {
                         char msg[256];
                         snprintf(msg, sizeof(msg), "Missing %s! %s",
-                                 src->method, runtime_install_hint(src->method));
+                                 method_str(src->method), runtime_install_hint(src->method));
                         app_set_message(&app, msg, 0);
                     } else {
                         /* Install platform deps visibly if needed */
@@ -528,23 +481,15 @@ int main(void) {
 
                         /* Start install/uninstall */
                         if (installing) {
-                            if (strcmp(src->method, "cargo") == 0) {
-                                start_cargo_install(&app, src);
-                            } else if (strcmp(src->method, "cmake") == 0) {
-                                start_cmake_install(&app, src);
-                            } else if (strcmp(src->method, "git") == 0) {
-                                start_git_install(&app, src);
+                            switch (src->method) {
+                            case METHOD_CARGO: start_cargo_install(&app, src); break;
+                            case METHOD_GIT:   start_git_install(&app, src); break;
                             }
                             app.panel_label = "INSTALLING";
                         } else {
-                            if (strcmp(src->method, "cargo") == 0) {
-                                start_cargo_uninstall(&app, src);
-                            } else if (strcmp(src->method, "cmake") == 0 ||
-                                       strcmp(src->method, "git") == 0) {
-                                if (strcmp(src->method, "cmake") == 0)
-                                    start_cmake_remove(&app, src);
-                                else
-                                    start_git_remove(&app, src);
+                            switch (src->method) {
+                            case METHOD_CARGO: start_cargo_uninstall(&app, src); break;
+                            case METHOD_GIT:   start_git_remove(&app, src); break;
                             }
                             app.panel_label = "REMOVING";
                         }

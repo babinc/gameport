@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include "catalog.h"
+#include <stddef.h>
 
 /* ── Toolchain detection ──────────────────────────────────────── */
 typedef struct {
@@ -12,17 +13,20 @@ typedef struct {
 } Toolchains;
 
 Toolchains toolchains_detect(void);
-int        has_runtime(const Toolchains *tc, const char *method);
-const char *runtime_install_hint(const char *method);
+int        has_runtime(const Toolchains *tc, MethodType method);
+const char *runtime_install_hint(MethodType method);
 
 /* ── Path helpers ─────────────────────────────────────────────── */
 int   which(const char *bin);                /* returns 1 if found on PATH */
 char *which_path(const char *bin);           /* returns malloc'd full path or NULL */
 char *games_dir(void);                       /* returns malloc'd path, creates dir */
-char *cmake_game_exe(const Source *src);     /* returns malloc'd path */
+char *logs_dir(void);                        /* returns malloc'd path, creates dir */
 int   deps_check_satisfied(const PlatformDeps *deps);
 int   is_git_cloned_not_ready(const Game *g);
 int   is_installed(const Game *g);
+
+/* ── Shell helpers ────────────────────────────────────────────── */
+void  shell_quote(char *out, size_t outlen, const char *in);
 
 /* ── Size formatting ──────────────────────────────────────────── */
 void  format_size(unsigned long bytes, char *buf, int buflen);

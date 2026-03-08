@@ -19,6 +19,8 @@ typedef enum {
 typedef struct {
     int selected;
     int *installed;
+    int *cloned;              /* cached is_git_cloned_not_ready */
+    int *deps_satisfied;      /* cached deps_check_satisfied */
     int should_quit;
     unsigned long tick;
     AppMode mode;
@@ -45,7 +47,7 @@ typedef struct {
     /* Search */
     char search[64];
     int search_len;
-    int filtered[64];         /* indices into GAMES[] that match */
+    int *filtered;            /* indices into GAMES[] that match */
     int filter_count;         /* number of matches */
 
     /* Category filter */

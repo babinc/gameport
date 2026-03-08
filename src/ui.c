@@ -17,7 +17,7 @@ void app_rebuild_filter(App *app) {
     app->filter_count = 0;
     const char *cat = (app->cat_index == 0) ? NULL : CATEGORIES[app->cat_index];
 
-    for (int i = 0; i < NUM_GAMES && app->filter_count < 64; i++) {
+    for (int i = 0; i < NUM_GAMES; i++) {
         /* Category filter */
         if (cat && strcmp(GAMES[i].category, cat) != 0) continue;
 
@@ -47,6 +47,9 @@ void app_rebuild_filter(App *app) {
 void app_init(App *app) {
     memset(app, 0, sizeof(*app));
     app->installed = malloc((size_t)NUM_GAMES * sizeof(int));
+    app->cloned = malloc((size_t)NUM_GAMES * sizeof(int));
+    app->deps_satisfied = malloc((size_t)NUM_GAMES * sizeof(int));
+    app->filtered = malloc((size_t)NUM_GAMES * sizeof(int));
     app->toolchains = toolchains_detect();
     app->child.pid = 0;
     app->child.pipe_fd = -1;
@@ -63,12 +66,18 @@ void app_init(App *app) {
 void app_refresh(App *app) {
     for (int i = 0; i < NUM_GAMES; i++) {
         app->installed[i] = is_installed(&GAMES[i]);
+        app->cloned[i] = is_git_cloned_not_ready(&GAMES[i]);
+        const PlatformDeps *deps = platform_deps_for_current(&GAMES[i]);
+        app->deps_satisfied[i] = deps ? deps_check_satisfied(deps) : 0;
     }
     app->toolchains = toolchains_detect();
 }
 
 void app_cleanup(App *app) {
     free(app->installed);
+    free(app->cloned);
+    free(app->deps_satisfied);
+    free(app->filtered);
     free(app->last_log);
     if (app->child.pid > 0) child_kill(&app->child);
     child_cleanup(&app->child);
@@ -224,7 +233,7 @@ static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
         int gi = app->filtered[scroll + i]; /* real game index */
         const Game *g = &GAMES[gi];
         int supported = game_supports_platform(g);
-        int cloned = is_git_cloned_not_ready(g);
+        int cloned = app->cloned[gi];
         int row = y + 1 + i;
         int is_sel = (scroll + i == app->selected);
 
@@ -281,7 +290,7 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     int gi = app->filtered[app->selected];
     const Game *g = &GAMES[gi];
     int installed = app->installed[gi];
-    int cloned = is_git_cloned_not_ready(g);
+    int cloned = app->cloned[gi];
     int supported = game_supports_platform(g);
     int row = y + 1;
     int iw = w - 3; /* inner width */
@@ -359,9 +368,10 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     /* Runtime status */
     if (src && row < y + h - 1) {
         int avail = has_runtime(&app->toolchains, src->method);
+        const char *mstr = method_str(src->method);
         int cx = ix;
         cx += scr_str_n(s, cx, row, "Runtime   ", iw, CLR_LABEL, CLR_BG, 0);
-        cx += scr_str_n(s, cx, row, src->method, iw - (cx - ix),
+        cx += scr_str_n(s, cx, row, mstr, iw - (cx - ix),
                          avail ? CLR_GREEN : CLR_RED, CLR_BG, 0);
         scr_str_n(s, cx, row, avail ? " (found)" : " (missing!)", iw - (cx - ix),
                   avail ? CLR_DARKGRAY : CLR_RED, CLR_BG, 0);
@@ -395,7 +405,7 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     /* Deps */
     const PlatformDeps *deps = platform_deps_for_current(g);
     if (deps && row < y + h - 1) {
-        int sat = deps_check_satisfied(deps);
+        int sat = app->deps_satisfied[gi];
         int cx = ix;
         cx += scr_str_n(s, cx, row, "Deps      ", iw, CLR_LABEL, CLR_BG, 0);
         cx += scr_str_n(s, cx, row, deps->deps, iw - (cx - ix),
@@ -445,14 +455,19 @@ static void render_output_panel(Screen *s, App *app, int x, int y, int w, int h)
     scr_box(s, x, y, w, h, border_color);
     scr_box_title(s, x, y, w, title, title_color, border_color);
 
-    int inner_h = h - 2;
     int inner_w = w - 2;
     LineBuf *lb = &app->child.output;
 
-    /* Auto-scroll */
+    /* Reserve bottom row for status message when done */
+    int inner_h = h - 2;
+    if (app->child.done) inner_h--;
+
+    /* Auto-scroll while running; clamp when done */
+    int max_scroll = lb->count - inner_h;
+    if (max_scroll < 0) max_scroll = 0;
     if (!app->child.done) {
-        int max_scroll = lb->count - inner_h;
-        if (max_scroll < 0) max_scroll = 0;
+        app->panel_scroll = max_scroll;
+    } else if (app->panel_scroll > max_scroll) {
         app->panel_scroll = max_scroll;
     }
 
@@ -475,24 +490,15 @@ static void render_output_panel(Screen *s, App *app, int x, int y, int w, int h)
         scr_str_n(s, x + 1, y + 1 + i, line, inner_w, clr, CLR_BG, 0);
     }
 
-    /* Status line at bottom */
-    int status_row = y + h - 2;
+    /* Status line at bottom — only when done */
     if (app->child.done) {
+        int status_row = y + h - 2;
         int is_running = (app->mode == MODE_RUNNING);
         const char *msg = app->child.ok
-            ? (is_running ? "Exited. Press Esc to close." : "Done! Press Esc to close.")
-            : (is_running ? "Crashed! Press Esc to close." : "Failed! Press Esc to close.");
+            ? (is_running ? "Exited. Press any key to close." : "Done! Press any key to close.")
+            : (is_running ? "Crashed! Press any key to close." : "Failed! Press any key to close.");
         scr_str_n(s, x + 2, status_row, msg, inner_w - 2,
                   app->child.ok ? CLR_GREEN : CLR_RED, CLR_BG, 1);
-    } else {
-        int dots = (int)(app->tick % 4) + 1;
-        char working[64];
-        int is_running = (app->mode == MODE_RUNNING);
-        if (is_running)
-            snprintf(working, sizeof(working), "Running%.*s (Esc to stop)", dots, "....");
-        else
-            snprintf(working, sizeof(working), "Working%.*s", dots, "....");
-        scr_str_n(s, x + 2, status_row, working, inner_w - 2, CLR_YELLOW, CLR_BG, 1);
     }
 }
 
@@ -507,6 +513,14 @@ static void render_log_view(Screen *s, App *app, int x, int y, int w, int h) {
 
     int inner_h = h - 2;
     int inner_w = w - 2;
+
+    /* Count lines and clamp scroll */
+    int total_lines = 0;
+    for (const char *c = app->last_log; *c; c++)
+        if (*c == '\n') total_lines++;
+    int max_scroll = total_lines - inner_h;
+    if (max_scroll < 0) max_scroll = 0;
+    if (app->log_scroll > max_scroll) app->log_scroll = max_scroll;
 
     int start = app->log_scroll;
     const char *p = app->last_log;
@@ -547,7 +561,7 @@ static void render_footer(Screen *s, App *app, int y) {
 
     if (app->mode == MODE_INSTALLING || app->mode == MODE_RUNNING) {
         if (app->child.done) {
-            cx += scr_str_n(s, cx, ky, "Esc", w - 2, CLR_RED, CLR_BG, 1);
+            cx += scr_str_n(s, cx, ky, "Any key", w - 2, CLR_CYAN, CLR_BG, 1);
             cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
         } else {
             cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);

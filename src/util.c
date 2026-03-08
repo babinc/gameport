@@ -48,17 +48,19 @@ Toolchains toolchains_detect(void) {
     return tc;
 }
 
-int has_runtime(const Toolchains *tc, const char *method) {
-    if (strcmp(method, "cargo") == 0) return tc->cargo;
-    if (strcmp(method, "cmake") == 0) return tc->cmake;
-    if (strcmp(method, "git") == 0)   return tc->git;
+int has_runtime(const Toolchains *tc, MethodType method) {
+    switch (method) {
+    case METHOD_CARGO: return tc->cargo;
+    case METHOD_GIT:   return tc->git;
+    }
     return 1;
 }
 
-const char *runtime_install_hint(const char *method) {
-    if (strcmp(method, "cargo") == 0) return "Install Rust: https://rustup.rs";
-    if (strcmp(method, "cmake") == 0) return "Need: cmake, git, C compiler (gcc)";
-    if (strcmp(method, "git") == 0)   return "Install Git: https://git-scm.com";
+const char *runtime_install_hint(MethodType method) {
+    switch (method) {
+    case METHOD_CARGO: return "Install Rust: https://rustup.rs";
+    case METHOD_GIT:   return "Install Git: https://git-scm.com";
+    }
     return "Unknown runtime";
 }
 
@@ -77,22 +79,34 @@ static void mkdir_p(const char *path) {
     mkdir(tmp, 0755);
 }
 
-char *games_dir(void) {
+/* OS-aware base data directory for gameport */
+static void data_base(char *buf, size_t buflen) {
     const char *home = getenv("HOME");
     if (!home) home = ".";
+#if defined(__APPLE__)
+    snprintf(buf, buflen, "%s/Library/Application Support/gameport", home);
+#elif defined(_WIN32)
+    const char *appdata = getenv("APPDATA");
+    if (appdata)
+        snprintf(buf, buflen, "%s/gameport", appdata);
+    else
+        snprintf(buf, buflen, "%s/AppData/Roaming/gameport", home);
+#else
+    snprintf(buf, buflen, "%s/.local/share/gameport", home);
+#endif
+}
+
+static char *sub_dir(const char *name) {
+    char base[512];
+    data_base(base, sizeof(base));
     char buf[1024];
-    snprintf(buf, sizeof(buf), "%s/.local/share/gameport/games", home);
+    snprintf(buf, sizeof(buf), "%s/%s", base, name);
     mkdir_p(buf);
     return strdup(buf);
 }
 
-char *cmake_game_exe(const Source *src) {
-    char *gdir = games_dir();
-    char buf[1024];
-    snprintf(buf, sizeof(buf), "%s/%s/build/%s", gdir, src->clone_dir, src->bin);
-    free(gdir);
-    return strdup(buf);
-}
+char *games_dir(void) { return sub_dir("games"); }
+char *logs_dir(void)  { return sub_dir("logs"); }
 
 int deps_check_satisfied(const PlatformDeps *deps) {
     if (!deps->check_cmd || !deps->check_cmd[0]) return 0;
@@ -117,38 +131,51 @@ int deps_check_satisfied(const PlatformDeps *deps) {
 
 int is_git_cloned_not_ready(const Game *g) {
     const Source *src = default_source(g);
-    if (!src || strcmp(src->method, "git") != 0) return 0;
+    if (!src || src->method != METHOD_GIT) return 0;
+    if (!src->play_cmd || !src->play_cmd[0]) return 0;
     char *gdir = games_dir();
-    char git_path[1024], ready_path[1024];
+    char git_path[1024], bin_path[1024];
     snprintf(git_path, sizeof(git_path), "%s/%s/.git", gdir, src->clone_dir);
-    snprintf(ready_path, sizeof(ready_path), "%s/%s/.arcade-ready", gdir, src->clone_dir);
+    snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->clone_dir, src->play_cmd[0]);
     free(gdir);
     struct stat st;
-    return (stat(git_path, &st) == 0) && (stat(ready_path, &st) != 0);
+    return (stat(git_path, &st) == 0) && (stat(bin_path, &st) != 0);
 }
 
 int is_installed(const Game *g) {
     const Source *src = default_source(g);
     if (!src) return 0;
 
-    if (strcmp(src->method, "cmake") == 0) {
+    if (src->method == METHOD_GIT) {
+        if (!src->play_cmd || !src->play_cmd[0]) return 0;
         char *gdir = games_dir();
         char path[1024];
-        snprintf(path, sizeof(path), "%s/%s/build", gdir, src->clone_dir);
-        free(gdir);
-        struct stat st;
-        return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
-    }
-    if (strcmp(src->method, "git") == 0) {
-        char *gdir = games_dir();
-        char path[1024];
-        snprintf(path, sizeof(path), "%s/%s/.arcade-ready", gdir, src->clone_dir);
+        snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->clone_dir, src->play_cmd[0]);
         free(gdir);
         struct stat st;
         return stat(path, &st) == 0;
     }
     /* cargo — check bin on PATH */
     return which(src->bin);
+}
+
+/* ── Shell helpers ────────────────────────────────────────────── */
+
+void shell_quote(char *out, size_t outlen, const char *in) {
+    size_t j = 0;
+    if (j < outlen - 1) out[j++] = '\'';
+    for (size_t i = 0; in[i] && j < outlen - 5; i++) {
+        if (in[i] == '\'') {
+            out[j++] = '\'';
+            out[j++] = '\\';
+            out[j++] = '\'';
+            out[j++] = '\'';
+        } else {
+            out[j++] = in[i];
+        }
+    }
+    if (j < outlen - 1) out[j++] = '\'';
+    out[j] = '\0';
 }
 
 /* ── Size formatting ──────────────────────────────────────────── */

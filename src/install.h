@@ -4,7 +4,9 @@
 #include <sys/types.h>
 #include "catalog.h"
 
-/* ── Output line buffer (growable) ────────────────────────────── */
+/* ── Output line buffer (growable, capped) ────────────────────── */
+#define LINEBUF_MAX 10000
+
 typedef struct {
     char **lines;
     int count;
@@ -22,6 +24,7 @@ typedef struct {
     int done;         /* 1 when child has exited */
     int ok;           /* 1 if child exited successfully */
     LineBuf output;
+    char partial[4096]; /* partial line buffer for pipe reads */
 } ChildProc;
 
 /* Start a command with captured output (non-blocking pipe read).

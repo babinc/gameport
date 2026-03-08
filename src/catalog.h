@@ -1,6 +1,10 @@
 #ifndef CATALOG_H
 #define CATALOG_H
 
+/* ── Install method enum ──────────────────────────────────────── */
+typedef enum { METHOD_CARGO, METHOD_GIT } MethodType;
+const char *method_str(MethodType m);
+
 /* ── Platform deps ────────────────────────────────────────────── */
 typedef struct {
     const char *os;             /* "linux", "windows", "macos" */
@@ -12,7 +16,7 @@ typedef struct {
 
 /* ── Source (a way to acquire and run a game) ─────────────────── */
 typedef struct {
-    const char *method;         /* "cargo", "cmake", "git" */
+    MethodType method;
     const char *label;          /* shown in UI */
 
     /* Acquire */

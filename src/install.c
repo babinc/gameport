@@ -22,8 +22,16 @@ void linebuf_init(LineBuf *lb) {
 }
 
 void linebuf_push(LineBuf *lb, const char *line) {
+    /* Evict oldest half when at capacity */
+    if (lb->count >= LINEBUF_MAX) {
+        int drop = LINEBUF_MAX / 2;
+        for (int i = 0; i < drop; i++) free(lb->lines[i]);
+        memmove(lb->lines, lb->lines + drop, (size_t)(lb->count - drop) * sizeof(char *));
+        lb->count -= drop;
+    }
     if (lb->count >= lb->cap) {
         lb->cap *= 2;
+        if (lb->cap > LINEBUF_MAX) lb->cap = LINEBUF_MAX;
         lb->lines = realloc(lb->lines, (size_t)lb->cap * sizeof(char *));
     }
     lb->lines[lb->count++] = strdup(line);
@@ -42,6 +50,7 @@ void child_start(ChildProc *cp, const char **cmd, const char *cwd) {
     linebuf_init(&cp->output);
     cp->done = 0;
     cp->ok = 0;
+    cp->partial[0] = '\0';
 
     /* Add initial "$ command" line */
     char cmdline[1024] = "$ ";
@@ -125,7 +134,6 @@ int child_poll(ChildProc *cp) {
 
     int new_lines = 0;
     char buf[4096];
-    static char linebuf_partial[4096] = "";
 
     for (;;) {
         ssize_t n = read(cp->pipe_fd, buf, sizeof(buf) - 1);
@@ -133,9 +141,9 @@ int child_poll(ChildProc *cp) {
             if (n == 0) {
                 /* EOF — pipe closed */
                 /* Flush partial line */
-                if (linebuf_partial[0]) {
-                    linebuf_push(&cp->output, linebuf_partial);
-                    linebuf_partial[0] = '\0';
+                if (cp->partial[0]) {
+                    linebuf_push(&cp->output, cp->partial);
+                    cp->partial[0] = '\0';
                     new_lines++;
                 }
                 close(cp->pipe_fd);
@@ -160,8 +168,8 @@ int child_poll(ChildProc *cp) {
                 *p = '\0';
                 /* Combine with partial */
                 char full[8192];
-                snprintf(full, sizeof(full), "%s%s", linebuf_partial, start);
-                linebuf_partial[0] = '\0';
+                snprintf(full, sizeof(full), "%s%s", cp->partial, start);
+                cp->partial[0] = '\0';
                 linebuf_push(&cp->output, full);
                 new_lines++;
                 start = p + 1;
@@ -169,10 +177,10 @@ int child_poll(ChildProc *cp) {
         }
         /* Store remaining as partial */
         if (*start) {
-            size_t plen = strlen(linebuf_partial);
+            size_t plen = strlen(cp->partial);
             size_t slen = strlen(start);
-            if (plen + slen < sizeof(linebuf_partial) - 1) {
-                memcpy(linebuf_partial + plen, start, slen + 1);
+            if (plen + slen < sizeof(cp->partial) - 1) {
+                memcpy(cp->partial + plen, start, slen + 1);
             }
         }
     }
@@ -241,7 +249,7 @@ int run_visible(const char **cmd, const char *cwd) {
 /* ── Build commands ───────────────────────────────────────────── */
 
 char **build_install_cmd(const Source *src) {
-    if (strcmp(src->method, "cargo") == 0) {
+    if (src->method == METHOD_CARGO) {
         char **cmd = malloc(4 * sizeof(char *));
         cmd[0] = strdup("cargo");
         cmd[1] = strdup("install");
@@ -249,16 +257,7 @@ char **build_install_cmd(const Source *src) {
         cmd[3] = NULL;
         return cmd;
     }
-    if (strcmp(src->method, "cmake") == 0) {
-        /* Return the build_cmd as-is (cmake-game commands) */
-        int n = 0;
-        while (src->build_cmd[n]) n++;
-        char **cmd = malloc((size_t)(n + 1) * sizeof(char *));
-        for (int i = 0; i < n; i++) cmd[i] = strdup(src->build_cmd[i]);
-        cmd[n] = NULL;
-        return cmd;
-    }
-    if (strcmp(src->method, "git") == 0) {
+    if (src->method == METHOD_GIT) {
         /* git-game <dir> <url> --shallow/--full [build_cmd...] */
         int cap = 16;
         char **cmd = malloc((size_t)cap * sizeof(char *));

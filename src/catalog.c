@@ -1,6 +1,14 @@
 #include "catalog.h"
 #include <string.h>
 
+const char *method_str(MethodType m) {
+    switch (m) {
+    case METHOD_CARGO: return "cargo";
+    case METHOD_GIT:   return "git";
+    }
+    return "unknown";
+}
+
 /* ── Platform detection ───────────────────────────────────────── */
 
 const char *current_platform(void) {
@@ -34,10 +42,6 @@ const PlatformDeps *platform_deps_for_current(const Game *g) {
 }
 
 const Source *default_source(const Game *g) {
-    for (int i = 0; i < g->num_sources; i++) {
-        if (strcmp(g->sources[i].method, "binary") != 0)
-            return &g->sources[i];
-    }
     if (g->num_sources > 0) return &g->sources[0];
     return NULL;
 }
@@ -59,24 +63,63 @@ static const char *t48_uninstall[] = {"cargo", "uninstall", "cli_2048", NULL};
 /* RecWars */
 static const char *rw_uninstall[] = {"cargo", "uninstall", "rec-wars", NULL};
 
-/* Space Invaders — cmake */
+/* Space Invaders — raylib (single-file game from raylib-games repo) */
 static const char *si_platforms[] = {"linux", "windows", "macos", NULL};
-static const char *si_build[] = {"cmake-game", "space_invaders", "classics/src/space_invaders.c", NULL};
-static const char *si_uninstall[] = {"cmake-game-remove", "space_invaders", NULL};
-static const char *si_linux_install[] = {"sudo", "apt", "install", "-y", "build-essential", "libgl1-mesa-dev", NULL};
-static const char *si_linux_check[] = {"dpkg", "-s", "libgl1-mesa-dev", NULL};
+static const char *si_build[] = {
+    "bash", "-c",
+    "set -e\n"
+    "cp classics/src/space_invaders.c space_invaders.c\n"
+    "cat > CMakeLists.txt << 'CMEOF'\n"
+    "cmake_minimum_required(VERSION 3.14)\n"
+    "project(space_invaders C)\n"
+    "include(FetchContent)\n"
+    "FetchContent_Declare(raylib GIT_REPOSITORY https://github.com/raysan5/raylib.git GIT_TAG 5.5 GIT_SHALLOW TRUE)\n"
+    "FetchContent_MakeAvailable(raylib)\n"
+    "add_executable(space_invaders space_invaders.c)\n"
+    "target_link_libraries(space_invaders raylib)\n"
+    "CMEOF\n"
+    "echo 'Configuring cmake (fetching raylib)...'\n"
+    "cmake -B build -DCMAKE_BUILD_TYPE=Release\n"
+    "echo 'Building...'\n"
+    "cmake --build build --config Release",
+    NULL
+};
+static const char *si_play[] = {"./build/space_invaders", NULL};
+static const char *si_uninstall[] = {"git-game-remove", "space_invaders", NULL};
+static const char *si_linux_install[] = {"sudo", "apt", "install", "-y",
+    "build-essential", "cmake", "libgl1-mesa-dev", NULL};
+static const char *si_linux_check[] = {"dpkg", "-s", "cmake", NULL};
 static const char *si_mac_install[] = {"xcode-select", "--install", NULL};
 static const char *si_mac_check[] = {"xcode-select", "-p", NULL};
 
 static const PlatformDeps si_deps[] = {
-    { "linux", "build-essential libgl1-mesa-dev", si_linux_install, si_linux_check, 1 },
+    { "linux", "build-essential cmake libgl1-mesa-dev", si_linux_install, si_linux_check, 1 },
     { "windows", "Visual Studio Build Tools", NULL, NULL, 0 },
     { "macos", "Xcode CLI tools", si_mac_install, si_mac_check, 0 },
 };
 
-/* Asteroids — cmake (shares deps with Space Invaders) */
-static const char *ast_build[] = {"cmake-game", "asteroids", "classics/src/asteroids.c", NULL};
-static const char *ast_uninstall[] = {"cmake-game-remove", "asteroids", NULL};
+/* Asteroids — raylib (single-file game from raylib-games repo, shares deps) */
+static const char *ast_build[] = {
+    "bash", "-c",
+    "set -e\n"
+    "cp classics/src/asteroids.c asteroids.c\n"
+    "cat > CMakeLists.txt << 'CMEOF'\n"
+    "cmake_minimum_required(VERSION 3.14)\n"
+    "project(asteroids C)\n"
+    "include(FetchContent)\n"
+    "FetchContent_Declare(raylib GIT_REPOSITORY https://github.com/raysan5/raylib.git GIT_TAG 5.5 GIT_SHALLOW TRUE)\n"
+    "FetchContent_MakeAvailable(raylib)\n"
+    "add_executable(asteroids asteroids.c)\n"
+    "target_link_libraries(asteroids raylib)\n"
+    "CMEOF\n"
+    "echo 'Configuring cmake (fetching raylib)...'\n"
+    "cmake -B build -DCMAKE_BUILD_TYPE=Release\n"
+    "echo 'Building...'\n"
+    "cmake --build build --config Release",
+    NULL
+};
+static const char *ast_play[] = {"./build/asteroids", NULL};
+static const char *ast_uninstall[] = {"git-game-remove", "asteroids", NULL};
 
 /* Anarch — git */
 static const char *an_platforms[] = {"linux", "windows", "macos", NULL};
@@ -94,49 +137,87 @@ static const PlatformDeps an_deps[] = {
     { "macos", "SDL2", an_mac_install, an_mac_check, 0 },
 };
 
+/* Chocolate Doom — git + cmake */
+static const char *cd_platforms[] = {"linux", "macos", NULL};
+static const char *cd_build[] = {
+    "bash", "-c",
+    "set -e && "
+    "mkdir -p build && cd build && "
+    "cmake .. -DCMAKE_BUILD_TYPE=Release && "
+    "make -j$(nproc) && "
+    "cd .. && "
+    "echo 'Downloading Freedoom WADs...' && "
+    "mkdir -p wads && "
+    "curl -L -o /tmp/freedoom.zip https://github.com/freedoom/freedoom/releases/download/v0.13.0/freedoom-0.13.0.zip && "
+    "unzip -o /tmp/freedoom.zip -d /tmp/freedoom && "
+    "cp /tmp/freedoom/freedoom-0.13.0/*.wad wads/ && "
+    "rm -rf /tmp/freedoom /tmp/freedoom.zip && "
+    "echo 'Freedoom WADs installed!'",
+    NULL
+};
+static const char *cd_play[] = {"./build/src/chocolate-doom", "-iwad", "./wads/freedoom2.wad", NULL};
+static const char *cd_uninstall[] = {"git-game-remove", "chocolate-doom", NULL};
+static const char *cd_linux_install[] = {"sudo", "apt", "install", "-y",
+    "build-essential", "cmake", "libsdl2-dev", "libsdl2-mixer-dev",
+    "libsdl2-net-dev", "libpng-dev", "unzip", "curl", NULL};
+static const char *cd_linux_check[] = {"dpkg", "-s", "libsdl2-net-dev", NULL};
+static const char *cd_mac_install[] = {"brew", "install", "sdl2", "sdl2_mixer", "sdl2_net", "libpng", NULL};
+static const char *cd_mac_check[] = {"brew", "list", "sdl2_net", NULL};
+
+static const PlatformDeps cd_deps[] = {
+    { "linux", "libsdl2-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev", cd_linux_install, cd_linux_check, 1 },
+    { "macos", "SDL2 SDL2_mixer SDL2_net libpng", cd_mac_install, cd_mac_check, 0 },
+};
+
 /* ── Sources ──────────────────────────────────────────────────── */
 
 static const Source ms_sources[] = {{
-    "cargo", "cargo install",
+    METHOD_CARGO, "cargo install",
     "", "", 1, NULL, NULL, "cmd-minesweeper", ms_uninstall,
 }};
 
 static const Source tet_sources[] = {{
-    "cargo", "cargo install",
+    METHOD_CARGO, "cargo install",
     "", "", 1, NULL, NULL, "sxtetris", tet_uninstall,
 }};
 
 static const Source chess_sources[] = {{
-    "cargo", "cargo install",
+    METHOD_CARGO, "cargo install",
     "", "", 1, NULL, NULL, "chess-tui", chess_uninstall,
 }};
 
 static const Source t48_sources[] = {{
-    "cargo", "cargo install",
+    METHOD_CARGO, "cargo install",
     "", "", 1, NULL, NULL, "2048", t48_uninstall,
 }};
 
 static const Source rw_sources[] = {{
-    "cargo", "cargo install",
+    METHOD_CARGO, "cargo install",
     "", "", 1, NULL, NULL, "rec-wars", rw_uninstall,
 }};
 
 static const Source si_sources[] = {{
-    "cmake", "Build from source (cmake)",
-    "https://github.com/raysan5/raylib-games", "space_invaders", 1,
-    si_build, NULL, "space_invaders", si_uninstall,
+    METHOD_GIT, "Build from source (cmake + raylib)",
+    "https://github.com/raysan5/raylib-games.git", "space_invaders", 1,
+    si_build, si_play, "space_invaders", si_uninstall,
 }};
 
 static const Source ast_sources[] = {{
-    "cmake", "Build from source (cmake)",
-    "https://github.com/raysan5/raylib-games", "asteroids", 1,
-    ast_build, NULL, "asteroids", ast_uninstall,
+    METHOD_GIT, "Build from source (cmake + raylib)",
+    "https://github.com/raysan5/raylib-games.git", "asteroids", 1,
+    ast_build, ast_play, "asteroids", ast_uninstall,
 }};
 
 static const Source an_sources[] = {{
-    "git", "Build from source (git + gcc)",
+    METHOD_GIT, "Build from source (git + gcc)",
     "https://gitlab.com/drummyfish/anarch.git", "anarch", 1,
     an_build, an_play, "anarch", an_uninstall,
+}};
+
+static const Source cd_sources[] = {{
+    METHOD_GIT, "Build from source (git + cmake)",
+    "https://github.com/chocolate-doom/chocolate-doom.git", "chocolate-doom", 1,
+    cd_build, cd_play, "chocolate-doom", cd_uninstall,
 }};
 
 /* ── Game catalog ─────────────────────────────────────────────── */
@@ -197,6 +278,13 @@ const Game GAMES[] = {
         "WASD move, Mouse aim, LMB shoot, RMB next weapon, Space jump", "Action",
         "SDL2", "https://gitlab.com/drummyfish/anarch",
         an_platforms, an_deps, 3, an_sources, 1,
+    },
+    {
+        "Chocolate Doom", "D",
+        "Faithful recreation of the original Doom engine. Plays just like the 1993 classic. Bundled with Freedoom -- free community-made levels and assets.",
+        "WASD move, Mouse aim, Ctrl fire, Space use/open, Shift run", "Shooter",
+        "SDL2", "https://github.com/chocolate-doom/chocolate-doom",
+        cd_platforms, cd_deps, 2, cd_sources, 1,
     },
 };
 
