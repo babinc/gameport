@@ -49,6 +49,7 @@ void app_init(App *app) {
     app->installed = malloc((size_t)NUM_GAMES * sizeof(int));
     app->cloned = malloc((size_t)NUM_GAMES * sizeof(int));
     app->deps_satisfied = malloc((size_t)NUM_GAMES * sizeof(int));
+    app->install_methods = calloc((size_t)NUM_GAMES, sizeof(char *));
     app->filtered = malloc((size_t)NUM_GAMES * sizeof(int));
     app->toolchains = toolchains_detect();
     app->child.pid = 0;
@@ -69,6 +70,8 @@ void app_refresh(App *app) {
         app->cloned[i] = is_git_cloned_not_ready(&GAMES[i]);
         const PlatformDeps *deps = platform_deps_for_current(&GAMES[i]);
         app->deps_satisfied[i] = deps ? deps_check_satisfied(deps) : 0;
+        free(app->install_methods[i]);
+        app->install_methods[i] = load_install_method(GAMES[i].name);
     }
     app->toolchains = toolchains_detect();
 }
@@ -77,6 +80,8 @@ void app_cleanup(App *app) {
     free(app->installed);
     free(app->cloned);
     free(app->deps_satisfied);
+    for (int i = 0; i < NUM_GAMES; i++) free(app->install_methods[i]);
+    free(app->install_methods);
     free(app->filtered);
     free(app->last_log);
     if (app->child.pid > 0) child_kill(&app->child);
@@ -415,6 +420,12 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
         row++;
     }
 
+    /* Installed-via line */
+    if (installed && row < y + h - 2 && app->install_methods[gi]) {
+        detail_row(s, ix, row, iw, "Installed ", app->install_methods[gi], CLR_GREEN);
+        row++;
+    }
+
     /* Affordance line at bottom of panel */
     int afford_row = y + h - 2;
     if (afford_row > row) {
@@ -545,6 +556,60 @@ static void render_log_view(Screen *s, App *app, int x, int y, int w, int h) {
     }
 }
 
+/* ── Source selection overlay ─────────────────────────────────── */
+
+static void render_source_select(Screen *s, App *app, int x, int y, int w, int h) {
+    scr_fill(s, x, y, w, h, CLR_BG);
+    scr_box(s, x, y, w, h, CLR_YELLOW);
+    scr_box_title(s, x, y, w, "SELECT SOURCE", CLR_YELLOW, CLR_YELLOW);
+
+    if (app->filter_count == 0) return;
+    int gi = app->active_game;
+    const Game *g = &GAMES[gi];
+
+    int ix = x + 2;
+    int iw = w - 4;
+    int row = y + 2;
+
+    /* Game name */
+    scr_str_n(s, ix, row, g->name, iw, CLR_CYAN, CLR_BG, 1);
+    row += 2;
+
+    /* List sources */
+    for (int i = 0; i < g->num_sources && row < y + h - 2; i++) {
+        const Source *src = &g->sources[i];
+        int is_sel = (i == app->source_selected);
+        Color bg = is_sel ? CLR_SELBG : CLR_BG;
+        scr_fill(s, x + 1, row, w - 2, 1, bg);
+
+        int cx = ix;
+        /* Number */
+        char num[16];
+        snprintf(num, sizeof(num), "%d.", i + 1);
+        cx += scr_str_n(s, cx, row, num, 3, CLR_CYAN, bg, 1);
+        cx += scr_str_n(s, cx, row, " ", 1, CLR_WHITE, bg, 0);
+
+        /* Label */
+        cx += scr_str_n(s, cx, row, src->label, iw - (cx - ix), CLR_WHITE, bg, 0);
+
+        /* Method badge */
+        const char *mstr = method_str(src->method);
+        int badge_w = (int)strlen(mstr) + 2;
+        if (cx + badge_w + 2 < ix + iw) {
+            cx += scr_str_n(s, cx, row, "  ", 2, CLR_BG, bg, 0);
+            scr_badge(s, cx, row, mstr, CLR_BLACK,
+                      src->method == METHOD_CARGO ? CLR_CYAN : CLR_GREEN, 0);
+        }
+
+        /* Selection arrow */
+        if (is_sel) {
+            scr_put(s, x + w - 2, row, 0x25B8, CLR_CYAN, bg, 0);
+        }
+
+        row++;
+    }
+}
+
 /* ── Footer (row h-2 = separator, row h-1 = keys + status) ──── */
 
 static void render_footer(Screen *s, App *app, int y) {
@@ -581,6 +646,15 @@ static void render_footer(Screen *s, App *app, int y) {
         cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
         cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
         cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+    } else if (app->mode == MODE_SOURCE_SELECT) {
+        cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " select", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "Enter", w - cx - 1, CLR_GREEN, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " confirm", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " cancel", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
     } else if (app->mode == MODE_SEARCH) {
         cx += scr_str_n(s, cx, ky, "Type", w - cx - 1, CLR_CYAN, CLR_BG, 1);
         cx += scr_str_n(s, cx, ky, " to search", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
@@ -647,6 +721,11 @@ void ui_draw(Screen *s, App *app) {
         int output_w = s->w - list_w;
         render_game_list(s, app, 0, header_h, list_w, main_h);
         render_output_panel(s, app, list_w, header_h, output_w, main_h);
+    } else if (app->mode == MODE_SOURCE_SELECT) {
+        /* Two-column: list + source picker */
+        int detail_w = s->w - list_w;
+        render_game_list(s, app, 0, header_h, list_w, main_h);
+        render_source_select(s, app, list_w, header_h, detail_w, main_h);
     } else {
         /* Two-column: list + details */
         int detail_w = s->w - list_w;

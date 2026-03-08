@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <ctype.h>
 #include <errno.h>
 
 /* ── which ────────────────────────────────────────────────────── */
@@ -157,6 +158,59 @@ int is_installed(const Game *g) {
     }
     /* cargo — check bin on PATH */
     return which(src->bin);
+}
+
+/* ── Install method tracking ──────────────────────────────────── */
+
+static void meta_path(const char *game_name, char *buf, size_t buflen) {
+    char *mdir = sub_dir("meta");
+    char safe[128];
+    sanitize_name(game_name, safe, sizeof(safe));
+    snprintf(buf, buflen, "%s/%s.method", mdir, safe);
+    free(mdir);
+}
+
+void save_install_method(const char *game_name, const char *label) {
+    char path[1024];
+    meta_path(game_name, path, sizeof(path));
+    FILE *f = fopen(path, "w");
+    if (f) {
+        fprintf(f, "%s\n", label);
+        fclose(f);
+    }
+}
+
+char *load_install_method(const char *game_name) {
+    char path[1024];
+    meta_path(game_name, path, sizeof(path));
+    FILE *f = fopen(path, "r");
+    if (!f) return NULL;
+    char buf[256];
+    if (fgets(buf, sizeof(buf), f)) {
+        fclose(f);
+        /* Strip trailing newline */
+        size_t len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n') buf[len - 1] = '\0';
+        return strdup(buf);
+    }
+    fclose(f);
+    return NULL;
+}
+
+void clear_install_method(const char *game_name) {
+    char path[1024];
+    meta_path(game_name, path, sizeof(path));
+    remove(path);
+}
+
+/* ── Name sanitization ────────────────────────────────────────── */
+
+void sanitize_name(const char *in, char *out, size_t outlen) {
+    snprintf(out, outlen, "%s", in);
+    for (char *p = out; *p; p++) {
+        if (*p == ' ') *p = '_';
+        *p = (char)tolower((unsigned char)*p);
+    }
 }
 
 /* ── Shell helpers ────────────────────────────────────────────── */

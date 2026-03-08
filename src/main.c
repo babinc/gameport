@@ -92,6 +92,31 @@ static void start_git_remove(App *app, const Source *src) {
     child_start(&app->child, cmd, NULL);
 }
 
+/* ── Start install/uninstall with a chosen source ────────────── */
+
+static void begin_install(App *app, const Source *src) {
+    switch (src->method) {
+    case METHOD_CARGO: start_cargo_install(app, src); break;
+    case METHOD_GIT:   start_git_install(app, src); break;
+    }
+    app->panel_label = "INSTALLING";
+    app->mode = MODE_INSTALLING;
+    app->panel_scroll = 0;
+    app_clear_message(app);
+}
+
+static void begin_uninstall(App *app, const Source *src) {
+    kill_game_process(src->bin);
+    switch (src->method) {
+    case METHOD_CARGO: start_cargo_uninstall(app, src); break;
+    case METHOD_GIT:   start_git_remove(app, src); break;
+    }
+    app->panel_label = "REMOVING";
+    app->mode = MODE_INSTALLING;
+    app->panel_scroll = 0;
+    app_clear_message(app);
+}
+
 /* ── Close install/run panel ───────────────────────────────────── */
 
 /* Returns a static buffer with the log file path (valid until next call) */
@@ -101,12 +126,8 @@ static const char *save_log_to_file(App *app) {
     time_t now = time(NULL);
     struct tm *tm = localtime(&now);
 
-    /* Build sanitized game name (spaces -> underscores) */
     char safe_name[128];
-    snprintf(safe_name, sizeof(safe_name), "%s", GAMES[app->active_game].name);
-    for (char *p = safe_name; *p; p++) {
-        if (*p == ' ') *p = '_';
-    }
+    sanitize_name(GAMES[app->active_game].name, safe_name, sizeof(safe_name));
 
     snprintf(path, sizeof(path), "%s/%s_%04d%02d%02d_%02d%02d%02d.log",
              ldir, safe_name,
@@ -124,8 +145,54 @@ static const char *save_log_to_file(App *app) {
     return NULL;
 }
 
+/* Try to install the currently selected source; returns 1 if install started */
+static int try_install_source(App *app, Screen *scr, int *w, int *h) {
+    const Game *g = &GAMES[app->active_game];
+    const Source *src = &g->sources[app->source_selected];
+
+    if (!has_runtime(&app->toolchains, src->method)) {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "Missing %s! %s",
+                 method_str(src->method), runtime_install_hint(src->method));
+        app_set_message(app, msg, 0);
+        app->mode = MODE_NORMAL;
+        return 0;
+    }
+
+    /* Install platform deps if needed */
+    const PlatformDeps *deps = platform_deps_for_current(g);
+    if (deps && deps->install_cmd && deps->install_cmd[0]
+        && !deps_check_satisfied(deps)) {
+        screen_resize(scr, *w, *h);
+        int ok = run_visible(deps->install_cmd, NULL);
+        term_get_size(w, h);
+        screen_resize(scr, *w, *h);
+        if (!ok) {
+            app_set_message(app, "Dep install failed. Press [i] to retry.", 0);
+            app->mode = MODE_NORMAL;
+            return 0;
+        }
+    }
+
+    begin_install(app, src);
+    return 1;
+}
+
 static void close_panel(App *app) {
     int ok = app->child.ok;
+    const Game *g = &GAMES[app->active_game];
+
+    /* Track install method */
+    if (ok) {
+        int was_installing = (strcmp(app->panel_label, "INSTALLING") == 0);
+        if (was_installing) {
+            int si = app->source_selected;
+            if (si >= 0 && si < g->num_sources)
+                save_install_method(g->name, g->sources[si].label);
+        } else {
+            clear_install_method(g->name);
+        }
+    }
 
     /* Save log to file (before building in-memory log so path is excluded from file) */
     const char *log_path = save_log_to_file(app);
@@ -274,6 +341,40 @@ int main(void) {
                 break;
             }
             break;
+
+        case MODE_SOURCE_SELECT: {
+            const Game *g = &GAMES[app.active_game];
+            switch (key.type) {
+            case KEY_ESC:
+                app.mode = MODE_NORMAL;
+                break;
+            case KEY_DOWN:
+                if (app.source_selected < g->num_sources - 1) app.source_selected++;
+                break;
+            case KEY_UP:
+                if (app.source_selected > 0) app.source_selected--;
+                break;
+            case KEY_ENTER:
+                try_install_source(&app, scr, &w, &h);
+                break;
+            case KEY_CHAR:
+                if (key.ch == 'j' && app.source_selected < g->num_sources - 1)
+                    app.source_selected++;
+                else if (key.ch == 'k' && app.source_selected > 0)
+                    app.source_selected--;
+                else if (key.ch >= '1' && key.ch <= '9') {
+                    int idx = key.ch - '1';
+                    if (idx < g->num_sources) {
+                        app.source_selected = idx;
+                        try_install_source(&app, scr, &w, &h);
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+            break;
+        }
 
         case MODE_SEARCH:
             if (key.type == KEY_ESC || key.type == KEY_ENTER) {
@@ -452,50 +553,17 @@ int main(void) {
                         char msg[128];
                         snprintf(msg, sizeof(msg), "%s not installed", g->name);
                         app_set_message(&app, msg, 0);
-                    } else if (installing && !has_runtime(&app.toolchains, src->method)) {
-                        char msg[256];
-                        snprintf(msg, sizeof(msg), "Missing %s! %s",
-                                 method_str(src->method), runtime_install_hint(src->method));
-                        app_set_message(&app, msg, 0);
-                    } else {
-                        /* Install platform deps visibly if needed */
-                        if (installing) {
-                            const PlatformDeps *deps = platform_deps_for_current(g);
-                            if (deps && deps->install_cmd && deps->install_cmd[0]
-                                && !deps_check_satisfied(deps)) {
-                                screen_resize(scr, w, h);
-                                int ok = run_visible(deps->install_cmd, NULL);
-                                term_get_size(&w, &h);
-                                screen_resize(scr, w, h);
-                                if (!ok) {
-                                    app_set_message(&app, "Dep install failed. Press [i] to retry.", 0);
-                                    break;
-                                }
-                            }
-                        }
-
-                        /* Kill game process before uninstall */
-                        if (!installing) {
-                            kill_game_process(src->bin);
-                        }
-
-                        /* Start install/uninstall */
-                        if (installing) {
-                            switch (src->method) {
-                            case METHOD_CARGO: start_cargo_install(&app, src); break;
-                            case METHOD_GIT:   start_git_install(&app, src); break;
-                            }
-                            app.panel_label = "INSTALLING";
+                    } else if (installing) {
+                        app.source_selected = 0;
+                        if (g->num_sources > 1) {
+                            app.mode = MODE_SOURCE_SELECT;
                         } else {
-                            switch (src->method) {
-                            case METHOD_CARGO: start_cargo_uninstall(&app, src); break;
-                            case METHOD_GIT:   start_git_remove(&app, src); break;
-                            }
-                            app.panel_label = "REMOVING";
+                            try_install_source(&app, scr, &w, &h);
                         }
-                        app.mode = MODE_INSTALLING;
-                        app.panel_scroll = 0;
-                        app_clear_message(&app);
+                    } else {
+                        /* Uninstall — use first source */
+                        app.source_selected = 0;
+                        begin_uninstall(&app, src);
                     }
                 }
                 break;

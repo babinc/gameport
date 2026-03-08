@@ -25,6 +25,14 @@ int   deps_check_satisfied(const PlatformDeps *deps);
 int   is_git_cloned_not_ready(const Game *g);
 int   is_installed(const Game *g);
 
+/* ── Install method tracking ──────────────────────────────────── */
+void  save_install_method(const char *game_name, const char *label);
+char *load_install_method(const char *game_name);  /* malloc'd or NULL */
+void  clear_install_method(const char *game_name);
+
+/* ── Name sanitization ────────────────────────────────────────── */
+void  sanitize_name(const char *in, char *out, size_t outlen);
+
 /* ── Shell helpers ────────────────────────────────────────────── */
 void  shell_quote(char *out, size_t outlen, const char *in);
 

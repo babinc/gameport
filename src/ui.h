@@ -13,6 +13,7 @@ typedef enum {
     MODE_RUNNING,
     MODE_VIEWLOG,
     MODE_SEARCH,
+    MODE_SOURCE_SELECT,
 } AppMode;
 
 /* ── App state ────────────────────────────────────────────────── */
@@ -21,6 +22,7 @@ typedef struct {
     int *installed;
     int *cloned;              /* cached is_git_cloned_not_ready */
     int *deps_satisfied;      /* cached deps_check_satisfied */
+    char **install_methods;   /* cached load_install_method per game */
     int should_quit;
     unsigned long tick;
     AppMode mode;
@@ -52,6 +54,9 @@ typedef struct {
 
     /* Category filter */
     int cat_index;            /* 0 = ALL, 1..N = specific category */
+
+    /* Source selection */
+    int source_selected;      /* cursor in source picker */
 } App;
 
 /* ── App lifecycle ────────────────────────────────────────────── */
