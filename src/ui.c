@@ -1,0 +1,644 @@
+#define _POSIX_C_SOURCE 200809L
+#include "ui.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <ctype.h>
+
+/* ── App lifecycle ────────────────────────────────────────────── */
+
+/* ── Categories ───────────────────────────────────────────────── */
+
+static const char *CATEGORIES[] = {"ALL", "Action", "Puzzle", "Strategy", "Shooter", "Racing", "Simulation"};
+const int NUM_CATEGORIES = sizeof(CATEGORIES) / sizeof(CATEGORIES[0]);
+
+void app_rebuild_filter(App *app) {
+    app->filter_count = 0;
+    const char *cat = (app->cat_index == 0) ? NULL : CATEGORIES[app->cat_index];
+
+    for (int i = 0; i < NUM_GAMES && app->filter_count < 64; i++) {
+        /* Category filter */
+        if (cat && strcmp(GAMES[i].category, cat) != 0) continue;
+
+        /* Search filter (case-insensitive substring) */
+        if (app->search_len > 0) {
+            const char *name = GAMES[i].name;
+            int found = 0;
+            for (int n = 0; name[n]; n++) {
+                int match = 1;
+                for (int s = 0; s < app->search_len && match; s++) {
+                    if (!name[n + s] || tolower((unsigned char)name[n + s]) != tolower((unsigned char)app->search[s]))
+                        match = 0;
+                }
+                if (match) { found = 1; break; }
+            }
+            if (!found) continue;
+        }
+
+        app->filtered[app->filter_count++] = i;
+    }
+
+    /* Clamp selection */
+    if (app->selected >= app->filter_count)
+        app->selected = app->filter_count > 0 ? app->filter_count - 1 : 0;
+}
+
+void app_init(App *app) {
+    memset(app, 0, sizeof(*app));
+    app->installed = malloc((size_t)NUM_GAMES * sizeof(int));
+    app->toolchains = toolchains_detect();
+    app->child.pid = 0;
+    app->child.pipe_fd = -1;
+    app->mode = MODE_NORMAL;
+    app->panel_label = "INSTALLING";
+    app_refresh(app);
+    app_rebuild_filter(app);
+
+    if (!app->toolchains.cargo) {
+        app_set_message(app, "cargo not found! Install: https://rustup.rs", 0);
+    }
+}
+
+void app_refresh(App *app) {
+    for (int i = 0; i < NUM_GAMES; i++) {
+        app->installed[i] = is_installed(&GAMES[i]);
+    }
+    app->toolchains = toolchains_detect();
+}
+
+void app_cleanup(App *app) {
+    free(app->installed);
+    free(app->last_log);
+    if (app->child.pid > 0) child_kill(&app->child);
+    child_cleanup(&app->child);
+}
+
+void app_next(App *app) {
+    if (app->filter_count > 0)
+        app->selected = (app->selected + 1) % app->filter_count;
+    app_clear_message(app);
+}
+
+void app_prev(App *app) {
+    if (app->filter_count > 0)
+        app->selected = (app->selected - 1 + app->filter_count) % app->filter_count;
+    app_clear_message(app);
+}
+
+void app_set_message(App *app, const char *msg, int ok) {
+    snprintf(app->message, sizeof(app->message), "%s", msg);
+    app->msg_ok = ok;
+    app->has_message = 1;
+}
+
+void app_clear_message(App *app) {
+    app->has_message = 0;
+}
+
+/* ── Header (row 0 = title + badges, row 1 = separator) ──────── */
+
+static Color header_color(unsigned long tick, int col) {
+    double hue = fmod((double)(tick * 3 + (unsigned long)col * 8), 360.0);
+    return hsl_to_rgb(hue, 0.55, 0.65);
+}
+
+static void render_header(Screen *s, App *app) {
+    /* Row 0: "GAME PORTAL" rainbow + toolchain badges + game count */
+    const char *title = "GAME PORTAL";
+    int tx = 2;
+    for (int i = 0; title[i]; i++) {
+        Color clr = header_color(app->tick, i);
+        scr_put(s, tx + i, 0, (uint32_t)title[i], clr, CLR_BG, 1);
+    }
+
+    /* Right side: toolchain badges + game count */
+    int rx = s->w - 1;
+
+    /* Game count badge */
+    int inst_count = 0;
+    for (int i = 0; i < NUM_GAMES; i++) if (app->installed[i]) inst_count++;
+    char countbuf[16];
+    snprintf(countbuf, sizeof(countbuf), "%d/%d", inst_count, NUM_GAMES);
+    int clen = (int)strlen(countbuf) + 2; /* +2 for padding */
+    rx -= clen;
+    scr_badge(s, rx, 0, countbuf, CLR_BLACK, CLR_CYAN, 1);
+    rx -= 1;
+
+    /* Toolchain badges */
+    struct { const char *name; int found; } tools[] = {
+        {"python", app->toolchains.python},
+        {"cmake", app->toolchains.cmake},
+        {"cargo", app->toolchains.cargo},
+    };
+    for (int t = 0; t < 3; t++) {
+        int tlen = (int)strlen(tools[t].name) + 2;
+        rx -= tlen;
+        Color fg = tools[t].found ? CLR_BLACK : CLR_DARKGRAY;
+        Color bg = tools[t].found ? CLR_GREEN : (Color){30,30,40};
+        scr_badge(s, rx, 0, tools[t].name, fg, bg, 0);
+        rx -= 1;
+    }
+
+    /* Row 1: separator */
+    scr_hline(s, 0, 1, s->w, 0x2500, CLR_BORDER, CLR_BG);
+}
+
+/* ── Game list panel ──────────────────────────────────────────── */
+
+static Color category_color(const char *category) {
+    if (!category) return CLR_ICON;
+    if (strcmp(category, "Puzzle") == 0)    return (Color){140,100,200};
+    if (strcmp(category, "Action") == 0)    return (Color){200,120,80};
+    if (strcmp(category, "Strategy") == 0)  return (Color){80,180,160};
+    if (strcmp(category, "Shooter") == 0)   return (Color){200,80,80};
+    if (strcmp(category, "Racing") == 0)    return (Color){200,160,60};
+    if (strcmp(category, "Simulation") == 0) return (Color){80,160,200};
+    return CLR_ICON;
+}
+
+static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
+    scr_fill(s, x, y, w, h, CLR_BG);
+    scr_box(s, x, y, w, h, CLR_BORDER);
+
+    /* Category tab in title area */
+    const char *cat = CATEGORIES[app->cat_index];
+    char title[32];
+    snprintf(title, sizeof(title), "%s", cat);
+    /* Uppercase for title */
+    for (int i = 0; title[i]; i++) title[i] = (char)toupper((unsigned char)title[i]);
+    scr_box_title(s, x, y, w, title, category_color(app->cat_index == 0 ? NULL : cat), CLR_BORDER);
+
+    /* Category arrows */
+    if (app->cat_index > 0)
+        scr_put(s, x + 1, y, 0x25C0, CLR_HINT, CLR_BG, 0); /* ◀ */
+    if (app->cat_index < NUM_CATEGORIES - 1)
+        scr_put(s, x + w - 2, y, 0x25B6, CLR_HINT, CLR_BG, 0); /* ▶ */
+
+    /* Search bar (bottom of box, inside) */
+    int search_row = y + h - 2;
+    if (app->mode == MODE_SEARCH) {
+        scr_fill(s, x + 1, search_row, w - 2, 1, (Color){30,30,50});
+        int sx = x + 1;
+        scr_put(s, sx++, search_row, '/', CLR_CYAN, (Color){30,30,50}, 1);
+        scr_str_n(s, sx, search_row, app->search, w - 4, CLR_WHITE, (Color){30,30,50}, 0);
+        sx += app->search_len;
+        scr_put(s, sx, search_row, '_', CLR_CYAN, (Color){30,30,50}, 0); /* cursor */
+    } else if (app->search_len > 0) {
+        scr_fill(s, x + 1, search_row, w - 2, 1, CLR_BG);
+        int sx = x + 1;
+        scr_put(s, sx++, search_row, '/', CLR_HINT, CLR_BG, 0);
+        scr_str_n(s, sx, search_row, app->search, w - 4, CLR_HINT, CLR_BG, 0);
+    }
+
+    int list_h = h - 2;
+    /* Reserve a row for search bar when searching or have active search */
+    if (app->mode == MODE_SEARCH || app->search_len > 0) list_h--;
+    if (list_h < 1) return;
+
+    int total = app->filter_count;
+
+    /* Compute scroll offset to keep selected visible */
+    int scroll = 0;
+    if (total > list_h) {
+        if (app->selected >= list_h) {
+            scroll = app->selected - list_h + 1;
+        }
+        if (scroll > total - list_h) {
+            scroll = total - list_h;
+        }
+    }
+
+    /* Scroll indicators */
+    if (scroll > 0) {
+        int ax = x + w / 2;
+        scr_put(s, ax, y, 0x25B2, CLR_HINT, CLR_BG, 0); /* ▲ */
+    }
+    if (scroll + list_h < total) {
+        int ax = x + w / 2;
+        int arrow_row = (app->mode == MODE_SEARCH || app->search_len > 0) ? y + h - 2 : y + h - 1;
+        scr_put(s, ax, arrow_row, 0x25BC, CLR_HINT, CLR_BG, 0); /* ▼ */
+    }
+
+    for (int i = 0; i < list_h && scroll + i < total; i++) {
+        int gi = app->filtered[scroll + i]; /* real game index */
+        const Game *g = &GAMES[gi];
+        int supported = game_supports_platform(g);
+        int cloned = is_git_cloned_not_ready(g);
+        int row = y + 1 + i;
+        int is_sel = (scroll + i == app->selected);
+
+        Color bg = is_sel ? CLR_SELBG : CLR_BG;
+        scr_fill(s, x + 1, row, w - 2, 1, bg);
+
+        /* Status dot: ● ○ ◐ × */
+        uint32_t dot;
+        Color dot_color;
+        if (!supported)              { dot = 0x00D7; dot_color = CLR_DARK; }     /* × */
+        else if (app->installed[gi]) { dot = 0x25CF; dot_color = CLR_GREEN; }    /* ● */
+        else if (cloned)             { dot = 0x25D0; dot_color = CLR_YELLOW; }   /* ◐ */
+        else                         { dot = 0x25CB; dot_color = (Color){80,80,100}; } /* ○ */
+
+        int cx = x + 1;
+        scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+        scr_put(s, cx++, row, dot, dot_color, bg, 0);
+        scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+
+        /* Name (no more icon brackets) */
+        Color name_color;
+        if (!supported)              name_color = CLR_DARK;
+        else if (app->installed[gi]) name_color = is_sel ? CLR_CYAN : CLR_WHITE;
+        else if (cloned)             name_color = CLR_YELLOW;
+        else                         name_color = (Color){140,140,150};
+
+        int name_max = w - 2 - (cx - x - 1) - 2; /* leave room for arrow */
+        scr_str_n(s, cx, row, g->name, name_max, name_color, bg, is_sel);
+
+        /* Selection arrow at right edge */
+        if (is_sel) {
+            scr_put(s, x + w - 2, row, 0x25B8, CLR_CYAN, bg, 0); /* ▸ */
+        }
+    }
+}
+
+/* ── Detail row helper ────────────────────────────────────────── */
+
+static int detail_row(Screen *s, int x, int y, int w, const char *label, const char *value, Color val_color) {
+    int cx = x;
+    cx += scr_str_n(s, cx, y, label, w, CLR_LABEL, CLR_BG, 0);
+    scr_str_n(s, cx, y, value, w - (cx - x), val_color, CLR_BG, 0);
+    return 1;
+}
+
+/* ── Details panel ────────────────────────────────────────────── */
+
+static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
+    scr_fill(s, x, y, w, h, CLR_BG);
+    scr_box(s, x, y, w, h, CLR_BORDER);
+    scr_box_title(s, x, y, w, "INFO", CLR_YELLOW, CLR_BORDER);
+
+    if (app->filter_count == 0) return;
+    int gi = app->filtered[app->selected];
+    const Game *g = &GAMES[gi];
+    int installed = app->installed[gi];
+    int cloned = is_git_cloned_not_ready(g);
+    int supported = game_supports_platform(g);
+    int row = y + 1;
+    int iw = w - 3; /* inner width */
+    int ix = x + 2;
+
+    /* Title */
+    int tlen = scr_str_n(s, ix, row, g->name, iw, CLR_CYAN, CLR_BG, 1);
+
+    /* Status badge */
+    int badge_x = ix + tlen + 2;
+    if (badge_x + 15 < ix + iw) {
+        if (installed) {
+            scr_badge(s, badge_x, row, "READY", CLR_BLACK, CLR_GREEN, 1);
+        } else if (cloned) {
+            scr_badge(s, badge_x, row, "CLONED", CLR_BLACK, CLR_YELLOW, 1);
+        } else {
+            scr_badge(s, badge_x, row, "NOT INSTALLED", CLR_WHITE, (Color){120,40,40}, 1);
+        }
+    }
+    row += 2;
+
+    /* Description — word wrap, max 3 lines */
+    const char *desc = g->desc;
+    int desc_lines = 0;
+    while (*desc && row < y + h - 1 && desc_lines < 3) {
+        int fit = 0;
+        int last_space = -1;
+        const char *p = desc;
+        while (*p && fit < iw) {
+            if (*p == ' ') last_space = fit;
+            p++; fit++;
+        }
+        int take = fit;
+        if (*p && last_space > 0) take = last_space + 1;
+        scr_str_n(s, ix, row, desc, take, (Color){200,200,220}, CLR_BG, 0);
+        desc += take;
+        while (*desc == ' ') desc++;
+        row++;
+        desc_lines++;
+    }
+    if (*desc && desc_lines >= 3 && row > y + 1) {
+        /* Truncate indicator on last desc line */
+        scr_str(s, ix + iw - 3, row - 1, "...", CLR_HINT, CLR_BG, 0);
+    }
+    row++;
+
+    /* Separator between description and metadata */
+    if (row < y + h - 1) {
+        scr_hline(s, ix, row, iw, 0x2500, CLR_SEPARATOR, CLR_BG);
+        row++;
+    }
+
+    /* Metadata */
+    if (row < y + h - 1) { detail_row(s, ix, row, iw, "Type      ", g->category, CLR_YELLOW); row++; }
+    if (row < y + h - 1) { detail_row(s, ix, row, iw, "Keys      ", g->keys, (Color){220,180,100}); row++; }
+    row++;
+
+    /* Separator between metadata and technicals */
+    if (row < y + h - 1) {
+        scr_hline(s, ix, row, iw, 0x2500, CLR_SEPARATOR, CLR_BG);
+        row++;
+    }
+
+    /* Technical section */
+    if (row < y + h - 1) { detail_row(s, ix, row, iw, "Engine    ", g->engine, (Color){200,160,100}); row++; }
+
+    const Source *src = default_source(g);
+    if (src && row < y + h - 1) {
+        detail_row(s, ix, row, iw, "Method    ", src->label, (Color){180,140,220}); row++;
+        if (src->bin[0] && row < y + h - 1) {
+            detail_row(s, ix, row, iw, "Bin       ", src->bin, CLR_GREEN); row++;
+        }
+    }
+
+    /* Runtime status */
+    if (src && row < y + h - 1) {
+        int avail = has_runtime(&app->toolchains, src->method);
+        int cx = ix;
+        cx += scr_str_n(s, cx, row, "Runtime   ", iw, CLR_LABEL, CLR_BG, 0);
+        cx += scr_str_n(s, cx, row, src->method, iw - (cx - ix),
+                         avail ? CLR_GREEN : CLR_RED, CLR_BG, 0);
+        scr_str_n(s, cx, row, avail ? " (found)" : " (missing!)", iw - (cx - ix),
+                  avail ? CLR_DARKGRAY : CLR_RED, CLR_BG, 0);
+        row++;
+    }
+
+    /* Platform */
+    if (row < y + h - 1) {
+        int cx = ix;
+        cx += scr_str_n(s, cx, row, "Platform  ", iw, CLR_LABEL, CLR_BG, 0);
+        if (!g->platforms) {
+            scr_str_n(s, cx, row, "all", iw - (cx - ix), CLR_GREEN, CLR_BG, 0);
+        } else {
+            char platbuf[128] = "";
+            for (int i = 0; g->platforms[i]; i++) {
+                if (i > 0) strncat(platbuf, ", ", sizeof(platbuf) - strlen(platbuf) - 1);
+                strncat(platbuf, g->platforms[i], sizeof(platbuf) - strlen(platbuf) - 1);
+            }
+            int pcx = cx;
+            pcx += scr_str_n(s, pcx, row, platbuf, iw - (pcx - ix),
+                             supported ? CLR_GREEN : (Color){140,140,150}, CLR_BG, 0);
+            if (!supported) {
+                char notbuf[64];
+                snprintf(notbuf, sizeof(notbuf), " (not %s)", current_platform());
+                scr_str_n(s, pcx, row, notbuf, iw - (pcx - ix), CLR_RED, CLR_BG, 0);
+            }
+        }
+        row++;
+    }
+
+    /* Deps */
+    const PlatformDeps *deps = platform_deps_for_current(g);
+    if (deps && row < y + h - 1) {
+        int sat = deps_check_satisfied(deps);
+        int cx = ix;
+        cx += scr_str_n(s, cx, row, "Deps      ", iw, CLR_LABEL, CLR_BG, 0);
+        cx += scr_str_n(s, cx, row, deps->deps, iw - (cx - ix),
+                         sat ? CLR_GREEN : CLR_YELLOW, CLR_BG, 0);
+        scr_str_n(s, cx, row, sat ? " (installed)" : " (needed)", iw - (cx - ix),
+                  sat ? CLR_DARKGRAY : CLR_YELLOW, CLR_BG, 0);
+        row++;
+    }
+
+    /* Affordance line at bottom of panel */
+    int afford_row = y + h - 2;
+    if (afford_row > row) {
+        if (!supported) {
+            char nbuf[128];
+            snprintf(nbuf, sizeof(nbuf), "-- Not available on %s", current_platform());
+            scr_str_n(s, ix, afford_row, nbuf, iw, CLR_DARK, CLR_BG, 0);
+        } else if (installed) {
+            scr_str_n(s, ix, afford_row, ">> Enter to play  |  d to remove", iw, CLR_GREEN, CLR_BG, 1);
+        } else if (cloned) {
+            scr_str_n(s, ix, afford_row, ">> i to build", iw, CLR_YELLOW, CLR_BG, 1);
+        } else {
+            scr_str_n(s, ix, afford_row, ">> i to install", iw, CLR_YELLOW, CLR_BG, 1);
+        }
+    }
+}
+
+/* ── Install/running output panel ─────────────────────────────── */
+
+static void render_output_panel(Screen *s, App *app, int x, int y, int w, int h) {
+    scr_fill(s, x, y, w, h, CLR_BG);
+
+    /* Determine title and border color */
+    const char *title = app->panel_label;
+    Color title_color = CLR_YELLOW;
+    Color border_color = CLR_BORDER;
+
+    if (app->child.done) {
+        title = app->child.ok ? "DONE" : "FAILED";
+        title_color = app->child.ok ? CLR_GREEN : CLR_RED;
+    }
+
+    /* Border flash on completion */
+    if (app->border_flash > 0) {
+        border_color = app->child.ok ? CLR_GREEN : CLR_RED;
+    }
+
+    scr_box(s, x, y, w, h, border_color);
+    scr_box_title(s, x, y, w, title, title_color, border_color);
+
+    int inner_h = h - 2;
+    int inner_w = w - 2;
+    LineBuf *lb = &app->child.output;
+
+    /* Auto-scroll */
+    if (!app->child.done) {
+        int max_scroll = lb->count - inner_h;
+        if (max_scroll < 0) max_scroll = 0;
+        app->panel_scroll = max_scroll;
+    }
+
+    int start = app->panel_scroll;
+    for (int i = 0; i < inner_h && start + i < lb->count; i++) {
+        const char *line = lb->lines[start + i];
+        /* Colorize output lines */
+        Color clr = CLR_DIMWHITE;
+        if (strncmp(line, "   Compiling", 12) == 0)      clr = CLR_CYAN;
+        else if (strncmp(line, " Downloading", 12) == 0)  clr = (Color){120,120,180};
+        else if (strncmp(line, "  Downloaded", 12) == 0)  clr = (Color){120,120,180};
+        else if (strncmp(line, "    Finished", 12) == 0)  clr = CLR_GREEN;
+        else if (strncmp(line, "  Installing", 12) == 0)  clr = CLR_GREEN;
+        else if (strncmp(line, "   Installed", 12) == 0)  clr = CLR_GREEN;
+        else if (strncmp(line, "error", 5) == 0)          clr = CLR_RED;
+        else if (strncmp(line, "Error", 5) == 0)          clr = CLR_RED;
+        else if (strncmp(line, "warning", 7) == 0)        clr = CLR_YELLOW;
+        else if (line[0] == '$')                          clr = (Color){180,180,220};
+
+        scr_str_n(s, x + 1, y + 1 + i, line, inner_w, clr, CLR_BG, 0);
+    }
+
+    /* Status line at bottom */
+    int status_row = y + h - 2;
+    if (app->child.done) {
+        int is_running = (app->mode == MODE_RUNNING);
+        const char *msg = app->child.ok
+            ? (is_running ? "Exited. Press Esc to close." : "Done! Press Esc to close.")
+            : (is_running ? "Crashed! Press Esc to close." : "Failed! Press Esc to close.");
+        scr_str_n(s, x + 2, status_row, msg, inner_w - 2,
+                  app->child.ok ? CLR_GREEN : CLR_RED, CLR_BG, 1);
+    } else {
+        int dots = (int)(app->tick % 4) + 1;
+        char working[64];
+        int is_running = (app->mode == MODE_RUNNING);
+        if (is_running)
+            snprintf(working, sizeof(working), "Running%.*s (Esc to stop)", dots, "....");
+        else
+            snprintf(working, sizeof(working), "Working%.*s", dots, "....");
+        scr_str_n(s, x + 2, status_row, working, inner_w - 2, CLR_YELLOW, CLR_BG, 1);
+    }
+}
+
+/* ── Log view ─────────────────────────────────────────────────── */
+
+static void render_log_view(Screen *s, App *app, int x, int y, int w, int h) {
+    scr_fill(s, x, y, w, h, CLR_BG);
+    scr_box(s, x, y, w, h, CLR_BORDER);
+    scr_box_title(s, x, y, w, "LOG", CLR_YELLOW, CLR_BORDER);
+
+    if (!app->last_log) return;
+
+    int inner_h = h - 2;
+    int inner_w = w - 2;
+
+    int start = app->log_scroll;
+    const char *p = app->last_log;
+    int line_no = 0;
+    while (line_no < start && *p) {
+        if (*p == '\n') line_no++;
+        p++;
+    }
+
+    for (int i = 0; i < inner_h && *p; i++) {
+        const char *eol = strchr(p, '\n');
+        int len = eol ? (int)(eol - p) : (int)strlen(p);
+        if (len > inner_w) len = inner_w;
+
+        char buf[512];
+        int cpy = len < (int)sizeof(buf) - 1 ? len : (int)sizeof(buf) - 1;
+        memcpy(buf, p, (size_t)cpy);
+        buf[cpy] = '\0';
+
+        scr_str_n(s, x + 1, y + 1 + i, buf, inner_w, (Color){200,200,220}, CLR_BG, 0);
+        p = eol ? eol + 1 : p + strlen(p);
+    }
+}
+
+/* ── Footer (row h-2 = separator, row h-1 = keys + status) ──── */
+
+static void render_footer(Screen *s, App *app, int y) {
+    int w = s->w;
+
+    /* Row y: separator */
+    scr_hline(s, 0, y, w, 0x2500, CLR_BORDER, CLR_BG);
+
+    /* Row y+1: keys left, status right */
+    int ky = y + 1;
+    scr_fill(s, 0, ky, w, 1, CLR_BG);
+
+    int cx = 1;
+
+    if (app->mode == MODE_INSTALLING || app->mode == MODE_RUNNING) {
+        if (app->child.done) {
+            cx += scr_str_n(s, cx, ky, "Esc", w - 2, CLR_RED, CLR_BG, 1);
+            cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        } else {
+            cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
+            cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+            if (app->mode == MODE_RUNNING) {
+                cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+                cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
+                cx += scr_str_n(s, cx, ky, " stop", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+            }
+        }
+    } else if (app->mode == MODE_VIEWLOG) {
+        cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "PgUp/PgDn", w - cx - 1, CLR_CYAN, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " page", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+    } else if (app->mode == MODE_SEARCH) {
+        cx += scr_str_n(s, cx, ky, "Type", w - cx - 1, CLR_CYAN, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " to search", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "Enter/Esc", w - cx - 1, CLR_YELLOW, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " done", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+    } else {
+        /* Normal mode keys */
+        struct { const char *key; const char *label; Color color; } keys[] = {
+            {"j/k", "nav", CLR_CYAN},
+            {"h/l", "cat", (Color){180,140,220}},
+            {"/", "search", CLR_YELLOW},
+            {"Enter", "play", CLR_GREEN},
+            {"i", "install", CLR_YELLOW},
+            {"d", "remove", CLR_RED},
+            {NULL, NULL, CLR_NONE},
+        };
+        for (int ki = 0; keys[ki].key; ki++) {
+            if (ki > 0) {
+                cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+            }
+            cx += scr_str_n(s, cx, ky, keys[ki].key, w - cx - 1, keys[ki].color, CLR_BG, 1);
+            cx += scr_str_n(s, cx, ky, " ", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+            cx += scr_str_n(s, cx, ky, keys[ki].label, w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        }
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "q", w - cx - 1, (Color){180,80,80}, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " quit", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+    }
+
+    /* Right side: status message */
+    if (app->has_message) {
+        int mlen = (int)strlen(app->message);
+        int mx = w - mlen - 2;
+        if (mx > cx + 2) {
+            scr_str_n(s, mx, ky, app->message, mlen, app->msg_ok ? CLR_GREEN : CLR_RED, CLR_BG, 1);
+        }
+    }
+}
+
+/* ── Main draw ────────────────────────────────────────────────── */
+
+void ui_draw(Screen *s, App *app) {
+    screen_clear(s, CLR_BG);
+
+    int header_h = 2;  /* row 0 = header, row 1 = separator */
+    int footer_h = 2;  /* row h-2 = separator, row h-1 = keys */
+    int main_h = s->h - header_h - footer_h;
+    if (main_h < 4) main_h = 4;
+
+    /* Decrement border flash */
+    if (app->border_flash > 0) app->border_flash--;
+
+    render_header(s, app);
+
+    int list_w = 28;
+    /* Narrow mode */
+    if (s->w < 70) list_w = 22;
+
+    if (app->mode == MODE_VIEWLOG) {
+        render_log_view(s, app, 0, header_h, s->w, main_h);
+    } else if (app->mode == MODE_INSTALLING || app->mode == MODE_RUNNING) {
+        /* Two-column: list + output */
+        int output_w = s->w - list_w;
+        render_game_list(s, app, 0, header_h, list_w, main_h);
+        render_output_panel(s, app, list_w, header_h, output_w, main_h);
+    } else {
+        /* Two-column: list + details */
+        int detail_w = s->w - list_w;
+        render_game_list(s, app, 0, header_h, list_w, main_h);
+        render_details(s, app, list_w, header_h, detail_w, main_h);
+    }
+
+    render_footer(s, app, s->h - footer_h);
+}
