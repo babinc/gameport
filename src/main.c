@@ -146,15 +146,55 @@ static void start_download_acquire(App *app, const Source *src) {
         chain_next(app, src->build_cmd, game_path);
     }
 
-    /* Build a bash script: mkdir, curl, extract */
     char script[4096];
     const char *at = src->archive_type;
+
+#ifdef _WIN32
+    /* ── Windows: PowerShell + curl.exe/tar.exe ──────────────── */
     int is_tar = at && (strcmp(at, "tar.gz") == 0 ||
                         strcmp(at, "tar.bz2") == 0 ||
                         strcmp(at, "tar.xz") == 0);
     if (is_tar) {
-        /* tar auto-detects compression with -a on GNU tar, but explicit is safer */
-        const char *flag = "z";  /* default: gzip */
+        snprintf(script, sizeof(script),
+            "$ErrorActionPreference='Stop'\n"
+            "New-Item -ItemType Directory -Force -Path '%s' | Out-Null\n"
+            "Write-Host 'Downloading %s...'\n"
+            "$dl = Join-Path $env:TEMP ('gp_dl_' + [System.IO.Path]::GetRandomFileName() + '.tar')\n"
+            "curl.exe -fSL '%s' -o $dl\n"
+            "tar.exe xf $dl -C '%s' --strip-components=1\n"
+            "Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
+            "Write-Host 'Done!'",
+            game_path, src->clone_dir, src->clone_url, game_path);
+    } else if (at && strcmp(at, "zip") == 0) {
+        snprintf(script, sizeof(script),
+            "$ErrorActionPreference='Stop'\n"
+            "New-Item -ItemType Directory -Force -Path '%s' | Out-Null\n"
+            "$dl = Join-Path $env:TEMP ('gp_dl_' + [System.IO.Path]::GetRandomFileName() + '.zip')\n"
+            "Write-Host 'Downloading %s...'\n"
+            "curl.exe -fSL -o $dl '%s'\n"
+            "Expand-Archive -Path $dl -DestinationPath '%s' -Force\n"
+            "Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
+            "Write-Host 'Done!'",
+            game_path, src->clone_dir, src->clone_url, game_path);
+    } else {
+        /* Raw binary / exe download */
+        snprintf(script, sizeof(script),
+            "$ErrorActionPreference='Stop'\n"
+            "New-Item -ItemType Directory -Force -Path '%s' | Out-Null\n"
+            "Write-Host 'Downloading %s...'\n"
+            "curl.exe -fSL -o '%s\\%s' '%s'\n"
+            "Write-Host 'Done!'",
+            game_path, src->clone_dir,
+            game_path, src->bin, src->clone_url);
+    }
+    const char *cmd[] = {"powershell", "-NoProfile", "-Command", script, NULL};
+#else
+    /* ── POSIX: bash + curl + tar/unzip ──────────────────────── */
+    int is_tar = at && (strcmp(at, "tar.gz") == 0 ||
+                        strcmp(at, "tar.bz2") == 0 ||
+                        strcmp(at, "tar.xz") == 0);
+    if (is_tar) {
+        const char *flag = "z";
         if (strcmp(at, "tar.bz2") == 0) flag = "j";
         else if (strcmp(at, "tar.xz") == 0) flag = "J";
         snprintf(script, sizeof(script),
@@ -189,6 +229,8 @@ static void start_download_acquire(App *app, const Source *src) {
             game_path, src->bin);
     }
     const char *cmd[] = {"bash", "-c", script, NULL};
+#endif
+
     child_start(&app->child, cmd, NULL);
     free(gdir);
 }

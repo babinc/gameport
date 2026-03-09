@@ -15,6 +15,7 @@ static const char *keys[] = {
 };
 
 static const char *play[] = {"./ClassiCube", NULL};
+static const char *play_win[] = {".\\ClassiCube.exe", NULL};
 
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
@@ -25,6 +26,14 @@ static const Source sources[] = {{
     .archive_type = "tar.gz",
     .bin = "ClassiCube",
     .play_cmd = play,
+}, {
+    .method = ACQUIRE_DOWNLOAD,
+    .label = "Download Windows exe (~5 MB)",
+    .platforms = PLATFORMS_WINDOWS,
+    .clone_url = "https://cdn.classicube.net/client/release/win64/ClassiCube.64.exe",
+    .clone_dir = "classicube",
+    .bin = "ClassiCube.exe",
+    .play_cmd = play_win,
 }};
 
 static const Game game_data = {
@@ -32,8 +41,8 @@ static const Game game_data = {
     .desc = "A lightweight Minecraft Classic client written from scratch in C. Build, explore, and play multiplayer on ClassiCube servers. Extremely fast and portable.",
     .keys = keys, .category = "Action",
     .engine = "OpenGL (custom C)", .repo = "https://github.com/ClassiCube/ClassiCube",
-    .platforms = PLATFORMS_LINUX,
-    .sources = sources, .num_sources = 1,
+    .platforms = PLATFORMS_LINUX_WIN,
+    .sources = sources, .num_sources = 2,
 };
 
 const Game *game_classicube(void) { return &game_data; }

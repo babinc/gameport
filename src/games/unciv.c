@@ -13,6 +13,7 @@ static const char *keys[] = {
 };
 
 static const char *play[] = {"./Unciv", NULL};
+static const char *play_win[] = {".\\Unciv.exe", NULL};
 
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
@@ -23,6 +24,15 @@ static const Source sources[] = {{
     .archive_type = "zip",
     .bin = "Unciv",
     .play_cmd = play,
+}, {
+    .method = ACQUIRE_DOWNLOAD,
+    .label = "Download Windows zip (~50 MB)",
+    .platforms = PLATFORMS_WINDOWS,
+    .clone_url = "https://github.com/yairm210/Unciv/releases/download/4.19.17-patch1/Unciv-Windows64.zip",
+    .clone_dir = "unciv",
+    .archive_type = "zip",
+    .bin = "Unciv.exe",
+    .play_cmd = play_win,
 }};
 
 static const Game game_data = {
@@ -30,8 +40,8 @@ static const Game game_data = {
     .desc = "An open-source remake of Civilization V with pixel art. Build empires, research technology, wage war, and pursue victory across multiple conditions. Mod support and multiplayer.",
     .keys = keys, .category = "Strategy",
     .engine = "libGDX", .repo = "https://github.com/yairm210/Unciv",
-    .platforms = PLATFORMS_LINUX,
-    .sources = sources, .num_sources = 1,
+    .platforms = PLATFORMS_LINUX_WIN,
+    .sources = sources, .num_sources = 2,
 };
 
 const Game *game_unciv(void) { return &game_data; }

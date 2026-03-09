@@ -62,6 +62,8 @@ void catalog_init(void);
 
 /* ── Common platform arrays ──────────────────────────────────── */
 extern const char *PLATFORMS_LINUX[];       /* {"linux", NULL} */
+extern const char *PLATFORMS_WINDOWS[];     /* {"windows", NULL} */
+extern const char *PLATFORMS_LINUX_WIN[];   /* {"linux", "windows", NULL} */
 extern const char *PLATFORMS_POSIX[];       /* {"linux", "macos", NULL} */
 extern const char *PLATFORMS_ALL[];         /* {"linux", "macos", "windows", NULL} */
 extern const char *MAC_XCODE_INSTALL[];     /* {"xcode-select", "--install", NULL} */

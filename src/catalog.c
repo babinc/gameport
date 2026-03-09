@@ -3,9 +3,11 @@
 
 /* ── Common platform arrays ──────────────────────────────────── */
 
-const char *PLATFORMS_LINUX[] = {"linux", NULL};
-const char *PLATFORMS_POSIX[] = {"linux", "macos", NULL};
-const char *PLATFORMS_ALL[]   = {"linux", "macos", "windows", NULL};
+const char *PLATFORMS_LINUX[]     = {"linux", NULL};
+const char *PLATFORMS_WINDOWS[]  = {"windows", NULL};
+const char *PLATFORMS_LINUX_WIN[] = {"linux", "windows", NULL};
+const char *PLATFORMS_POSIX[]    = {"linux", "macos", NULL};
+const char *PLATFORMS_ALL[]      = {"linux", "macos", "windows", NULL};
 const char *MAC_XCODE_INSTALL[] = {"xcode-select", "--install", NULL};
 const char *MAC_XCODE_CHECK[]   = {"xcode-select", "-p", NULL};
 
