@@ -11,7 +11,7 @@
 
 static const char *CATEGORIES[] = {
     "ALL", "Action", "Puzzle", "Strategy", "Shooter",
-    "Racing", "Simulation", "Platformer", "Stealth",
+    "Racing", "Simulation", "Platformer", "Stealth", "Roguelike",
 };
 const int NUM_CATEGORIES = sizeof(CATEGORIES) / sizeof(CATEGORIES[0]);
 

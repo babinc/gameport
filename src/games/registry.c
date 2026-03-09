@@ -17,6 +17,9 @@ const Game *game_widelands(void);
 const Game *game_srb2(void);
 const Game *game_red_eclipse(void);
 const Game *game_thedarkmod(void);
+const Game *game_brogue(void);
+const Game *game_cataclysm_dda(void);
+const Game *game_nethack(void);
 
 typedef const Game *(*GameFn)(void);
 
@@ -37,6 +40,9 @@ static const GameFn game_fns[] = {
     game_srb2,
     game_red_eclipse,
     game_thedarkmod,
+    game_brogue,
+    game_cataclysm_dda,
+    game_nethack,
 };
 
 #define MAX_GAMES 32
