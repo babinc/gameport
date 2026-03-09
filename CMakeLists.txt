@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(gameport C)
+project(gameport VERSION 0.1.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -25,6 +25,9 @@ else()
 endif()
 
 add_executable(gameport ${COMMON_SRC} ${PLATFORM_SRC} ${GAME_SRC})
+target_compile_definitions(gameport PRIVATE
+    GAMEPORT_VERSION="${PROJECT_VERSION}"
+)
 
 target_compile_options(gameport PRIVATE
     $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -pedantic>

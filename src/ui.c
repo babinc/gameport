@@ -177,6 +177,12 @@ static void render_header(Screen *s, App *app) {
         Color clr = header_color(app->tick, i);
         scr_put(s, tx + i, 0, (uint32_t)title[i], clr, CLR_BG, 1);
     }
+#ifdef GAMEPORT_VERSION
+    const char *ver = " v" GAMEPORT_VERSION;
+#else
+    const char *ver = "";
+#endif
+    scr_str(s, tx + (int)strlen(title), 0, ver, CLR_DARKGRAY, CLR_BG, 0);
 
     /* Right side: toolchain badges + game count */
     int rx = s->w - 1;
