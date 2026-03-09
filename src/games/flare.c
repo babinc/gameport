@@ -28,7 +28,8 @@ static const Game game_data = {
     .name = "Flare RPG", .icon = "F",
     .desc = "An isometric action RPG inspired by Diablo. Explore dungeons, fight monsters, collect loot, and level up. Fully self-contained with original art and story.",
     .keys = keys, .category = "RPG",
-    .engine = "SDL2", .repo = "https://github.com/flareteam/flare-game",
+    .engine = "SDL2", .website = "https://flarerpg.org/",
+    .repo = "https://github.com/flareteam/flare-game",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

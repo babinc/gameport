@@ -40,7 +40,8 @@ static const Game game_data = {
     .name = "ClassiCube", .icon = "C",
     .desc = "A lightweight Minecraft Classic client written from scratch in C. Build, explore, and play multiplayer on ClassiCube servers. Extremely fast and portable.",
     .keys = keys, .category = "Action",
-    .engine = "OpenGL (custom C)", .repo = "https://github.com/ClassiCube/ClassiCube",
+    .engine = "OpenGL (custom C)", .website = "https://www.classicube.net/",
+    .repo = "https://github.com/ClassiCube/ClassiCube",
     .platforms = PLATFORMS_LINUX_WIN,
     .sources = sources, .num_sources = 2,
 };

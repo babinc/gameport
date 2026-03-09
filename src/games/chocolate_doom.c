@@ -62,7 +62,8 @@ static const Game game_data = {
     .name = "Chocolate Doom", .icon = "D",
     .desc = "Faithful recreation of the original Doom engine. Plays just like the 1993 classic. Bundled with Freedoom -- free community-made levels and assets.",
     .keys = keys, .category = "Shooter",
-    .engine = "SDL2", .repo = "https://github.com/chocolate-doom/chocolate-doom",
+    .engine = "SDL2", .website = "https://www.chocolate-doom.org/",
+    .repo = "https://github.com/chocolate-doom/chocolate-doom",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

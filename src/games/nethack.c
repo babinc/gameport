@@ -86,7 +86,8 @@ static const Game game_data = {
     .name = "NetHack", .icon = "N",
     .desc = "The granddaddy of roguelikes. Descend into the Mazes of Menace, retrieve the Amulet of Yendor, and ascend. Incredibly deep gameplay with emergent interactions between hundreds of items and monsters.",
     .keys = keys, .category = "Roguelike",
-    .engine = "ncurses", .repo = "https://github.com/NetHack/NetHack",
+    .engine = "ncurses", .website = "https://www.nethack.org/",
+    .repo = "https://github.com/NetHack/NetHack",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

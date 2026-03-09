@@ -40,7 +40,8 @@ static const Game game_data = {
     .name = "Teeworlds", .icon = "T",
     .desc = "A retro multiplayer 2D shooter with grappling hook mechanics. Fast-paced online matches with custom maps and an active competitive community.",
     .keys = keys, .category = "Shooter",
-    .engine = "SDL2 (OpenGL)", .repo = "https://github.com/teeworlds/teeworlds",
+    .engine = "SDL2 (OpenGL)", .website = "https://www.teeworlds.com/",
+    .repo = "https://github.com/teeworlds/teeworlds",
     .platforms = PLATFORMS_LINUX_WIN,
     .sources = sources, .num_sources = 2,
 };

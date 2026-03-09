@@ -80,7 +80,8 @@ static const Game game_data = {
     .name = "The Dark Mod", .icon = "M",
     .desc = "Free standalone stealth game inspired by Thief. Sneak through shadows, pickpocket, lockpick, and explore 170+ fan-made missions. Large download (~4GB assets).",
     .keys = keys, .category = "Stealth",
-    .engine = "id Tech 4 (modified)", .repo = "https://github.com/stgatilov/darkmod_src",
+    .engine = "id Tech 4 (modified)", .website = "https://www.thedarkmod.com/",
+    .repo = "https://github.com/stgatilov/darkmod_src",
     .platforms = platforms, .platform_deps = deps, .num_deps = 1,
     .sources = sources, .num_sources = 1,
 };

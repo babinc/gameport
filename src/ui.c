@@ -524,6 +524,8 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
 
     /* Technical section */
     if (row < y + h - 1) { detail_row(s, ix, row, iw, "Engine    ", g->engine, (Color){200,160,100}); row++; }
+    if (g->website && row < y + h - 1) { detail_row(s, ix, row, iw, "Website   ", g->website, (Color){100,180,255}); row++; }
+    if (g->repo && row < y + h - 1) { detail_row(s, ix, row, iw, "Repo      ", g->repo, (Color){100,180,255}); row++; }
 
     const Source *src = default_source(g);
     if (src && row < y + h - 1) {
@@ -920,6 +922,7 @@ static void render_footer(Screen *s, App *app, int y) {
             {"i", "install", CLR_YELLOW},
             {"d", "remove", CLR_RED},
             {"c", "keys", (Color){220,180,100}},
+            {"w", "web", (Color){100,180,255}},
             {NULL, NULL, CLR_NONE},
         };
         for (int ki = 0; keys[ki].key; ki++) {

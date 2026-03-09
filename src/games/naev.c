@@ -31,7 +31,8 @@ static const Game game_data = {
     .name = "Naev", .icon = "N",
     .desc = "A 2D space trading and combat game inspired by Escape Velocity. Explore a vast galaxy, trade goods, take on missions, fight pirates, and build faction reputation.",
     .keys = keys, .category = "Simulation",
-    .engine = "SDL2 (OpenGL)", .repo = "https://github.com/naev/naev",
+    .engine = "SDL2 (OpenGL)", .website = "https://naev.org/",
+    .repo = "https://github.com/naev/naev",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

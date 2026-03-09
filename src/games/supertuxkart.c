@@ -65,7 +65,8 @@ static const Game game_data = {
     .name = "SuperTuxKart", .icon = "S",
     .desc = "Free open-source kart racer. Race as Tux and friends on 30+ tracks with powerups, nitro, and multiplayer. All assets included -- fully free.",
     .keys = keys, .category = "Racing",
-    .engine = "custom (Irrlicht)", .repo = "https://github.com/supertuxkart/stk-code",
+    .engine = "custom (Irrlicht)", .website = "https://supertuxkart.net/",
+    .repo = "https://github.com/supertuxkart/stk-code",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

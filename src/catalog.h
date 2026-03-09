@@ -47,6 +47,7 @@ typedef struct {
     const char **keys;          /* NULL-terminated "Key|Action" pairs */
     const char *category;
     const char *engine;
+    const char *website;        /* game homepage URL, NULL if none */
     const char *repo;
     const char **platforms;     /* NULL-terminated, NULL = all */
     const PlatformDeps *platform_deps;

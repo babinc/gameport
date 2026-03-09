@@ -34,7 +34,8 @@ static const Game game_data = {
     .name = "Dungeon Crawl Stone Soup", .icon = "D",
     .desc = "One of the greatest traditional roguelikes. Descend through procedurally generated dungeons, choose from dozens of species and backgrounds, and face permadeath in deep tactical combat.",
     .keys = keys, .category = "Roguelike",
-    .engine = "ncurses", .repo = "https://github.com/crawl/crawl",
+    .engine = "ncurses", .website = "https://crawl.develz.org/",
+    .repo = "https://github.com/crawl/crawl",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

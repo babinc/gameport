@@ -32,7 +32,8 @@ static const Game game_data = {
     .name = "OpenRA: Red Alert", .icon = "R",
     .desc = "A modern reimplementation of Command & Conquer: Red Alert with updated UI, multiplayer, and AI. Build bases, harvest ore, and command Allied or Soviet forces.",
     .keys = keys, .category = "Strategy",
-    .engine = "Mono (OpenGL)", .repo = "https://github.com/OpenRA/OpenRA",
+    .engine = "Mono (OpenGL)", .website = "https://www.openra.net/",
+    .repo = "https://github.com/OpenRA/OpenRA",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

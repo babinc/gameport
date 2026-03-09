@@ -27,7 +27,8 @@ static const Game game_data = {
     .name = "PokerTH", .icon = "$",
     .desc = "Texas Hold'em poker with AI opponents and online multiplayer. Features a polished interface, lobby system, and customizable rules.",
     .keys = keys, .category = "Card",
-    .engine = "Qt/SDL", .repo = "https://github.com/pokerth/pokerth",
+    .engine = "Qt/SDL", .website = "https://www.pokerth.net/",
+    .repo = "https://github.com/pokerth/pokerth",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

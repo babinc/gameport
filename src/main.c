@@ -709,6 +709,17 @@ int main(void) {
                         app.mode = MODE_CONTROLS;
                         app.panel_scroll = 0;
                     }
+                } else if (key.ch == 'w') {
+                    if (app.filter_count > 0 && !IS_HEADER(app.filtered[app.selected])) {
+                        const Game *g = &GAMES[app.filtered[app.selected]];
+                        const char *url = g->website ? g->website : g->repo;
+                        if (url) {
+                            plat_open_url(url);
+                            char msg[128];
+                            snprintf(msg, sizeof(msg), "Opening %s...", url);
+                            app_set_message(&app, msg, 1);
+                        }
+                    }
                 } else if (key.ch == 'L') {
                     if (app.last_log) {
                         app.mode = MODE_VIEWLOG;

@@ -29,7 +29,8 @@ static const Game game_data = {
     .name = "Shattered Pixel Dungeon", .icon = "P",
     .desc = "A hugely popular roguelike RPG dungeon crawler. Explore randomized floors, collect loot, and fight through permadeath with pixel art charm. Four hero classes with unique abilities.",
     .keys = keys, .category = "Roguelike",
-    .engine = "libGDX", .repo = "https://github.com/00-Evan/shattered-pixel-dungeon",
+    .engine = "libGDX", .website = "https://shatteredpixel.com/",
+    .repo = "https://github.com/00-Evan/shattered-pixel-dungeon",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

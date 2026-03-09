@@ -45,7 +45,8 @@ static const Game game_data = {
     .name = "Anarch", .icon = "F",
     .desc = "Retro first-person shooter inspired by Doom. 10 levels, multiple weapons, all assets embedded in source code. Tiny, fast, zero external files needed.",
     .keys = keys, .category = "Action",
-    .engine = "SDL2", .repo = "https://gitlab.com/drummyfish/anarch",
+    .engine = "SDL2", .website = "https://drummyfish.gitlab.io/anarch/",
+    .repo = "https://gitlab.com/drummyfish/anarch",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

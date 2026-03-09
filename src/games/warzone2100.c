@@ -75,7 +75,8 @@ static const Game game_data = {
     .name = "Warzone 2100", .icon = "W",
     .desc = "Open-source real-time strategy set in a post-apocalyptic future. Research tech, design vehicles, and command armies. Fully free with campaign and multiplayer.",
     .keys = keys, .category = "Strategy",
-    .engine = "custom (OpenGL)", .repo = "https://github.com/Warzone2100/warzone2100",
+    .engine = "custom (OpenGL)", .website = "https://wz2100.net/",
+    .repo = "https://github.com/Warzone2100/warzone2100",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

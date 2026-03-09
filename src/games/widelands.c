@@ -65,7 +65,8 @@ static const Game game_data = {
     .name = "Widelands", .icon = "L",
     .desc = "Free open-source colony-building strategy game inspired by Settlers II. Grow settlements, manage resources, and conquer territory. All assets included.",
     .keys = keys, .category = "Strategy",
-    .engine = "SDL2 (OpenGL)", .repo = "https://github.com/widelands/widelands",
+    .engine = "SDL2 (OpenGL)", .website = "https://www.widelands.org/",
+    .repo = "https://github.com/widelands/widelands",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

@@ -24,7 +24,8 @@ static const Game game_data = {
     .name = "SuperTux", .icon = "S",
     .desc = "Classic 2D side-scrolling platformer starring Tux the Linux mascot. Run, jump, and collect powerups through colorful worlds inspired by Super Mario Bros.",
     .keys = keys, .category = "Platformer",
-    .engine = "SDL2 (OpenGL)", .repo = "https://github.com/SuperTux/supertux",
+    .engine = "SDL2 (OpenGL)", .website = "https://www.supertux.org/",
+    .repo = "https://github.com/SuperTux/supertux",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

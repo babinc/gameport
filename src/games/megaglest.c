@@ -32,7 +32,8 @@ static const Game game_data = {
     .name = "MegaGlest", .icon = "M",
     .desc = "A 3D real-time strategy game with multiple factions set in fantasy and historical worlds. Build bases, train armies, and battle in single-player campaigns or multiplayer.",
     .keys = keys, .category = "Strategy",
-    .engine = "OpenGL (custom)", .repo = "https://github.com/MegaGlest/megaglest-source",
+    .engine = "OpenGL (custom)", .website = "https://megaglest.org/",
+    .repo = "https://github.com/MegaGlest/megaglest-source",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

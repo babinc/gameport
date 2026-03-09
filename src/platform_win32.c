@@ -469,4 +469,8 @@ void plat_sleep_ms(int ms) {
     Sleep((DWORD)ms);
 }
 
+void plat_open_url(const char *url) {
+    ShellExecuteA(NULL, "open", url, NULL, NULL, SW_SHOWNORMAL);
+}
+
 #endif /* _WIN32 */

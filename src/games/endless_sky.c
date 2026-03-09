@@ -55,7 +55,8 @@ static const Game game_data = {
     .name = "Endless Sky", .icon = "E",
     .desc = "Open-world space exploration, trading, and combat game. Start with a tiny shuttle, trade cargo, take on missions, upgrade your ship, and build a fleet. All assets included.",
     .keys = keys, .category = "Simulation",
-    .engine = "SDL2 (OpenGL)", .repo = "https://github.com/endless-sky/endless-sky",
+    .engine = "SDL2 (OpenGL)", .website = "https://endless-sky.github.io/",
+    .repo = "https://github.com/endless-sky/endless-sky",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

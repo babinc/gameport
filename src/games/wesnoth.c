@@ -59,7 +59,8 @@ static const Game game_data = {
     .name = "Battle for Wesnoth", .icon = "W",
     .desc = "Turn-based tactical strategy in a high fantasy setting. Lead armies through full campaigns, recruit units, and fight on hex-grid battlefields. Rich multiplayer and modding community.",
     .keys = keys, .category = "Strategy",
-    .engine = "SDL2", .repo = "https://github.com/wesnoth/wesnoth",
+    .engine = "SDL2", .website = "https://www.wesnoth.org/",
+    .repo = "https://github.com/wesnoth/wesnoth",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

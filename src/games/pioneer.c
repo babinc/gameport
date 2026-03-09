@@ -31,7 +31,8 @@ static const Game game_data = {
     .name = "Pioneer", .icon = "P",
     .desc = "A space adventure game inspired by Frontier: Elite II. Explore a realistic galaxy with Newtonian physics, trade between stations, and take on missions.",
     .keys = keys, .category = "Simulation",
-    .engine = "SDL2 (OpenGL)", .repo = "https://github.com/pioneerspacesim/pioneer",
+    .engine = "SDL2 (OpenGL)", .website = "https://pioneerspacesim.net/",
+    .repo = "https://github.com/pioneerspacesim/pioneer",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

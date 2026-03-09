@@ -307,3 +307,18 @@ void plat_sleep_ms(int ms) {
     ts.tv_nsec = (ms % 1000) * 1000000L;
     nanosleep(&ts, NULL);
 }
+
+void plat_open_url(const char *url) {
+#ifdef __APPLE__
+    const char *cmd[] = {"open", url, NULL};
+#else
+    const char *cmd[] = {"xdg-open", url, NULL};
+#endif
+    pid_t pid = fork();
+    if (pid == 0) {
+        int fd = open("/dev/null", O_WRONLY);
+        if (fd >= 0) { dup2(fd, STDOUT_FILENO); dup2(fd, STDERR_FILENO); close(fd); }
+        exec_cmd(cmd);
+    }
+    /* Don't wait — let browser open in background */
+}

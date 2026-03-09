@@ -31,7 +31,8 @@ static const Game game_data = {
     .name = "0 A.D.", .icon = "0",
     .desc = "A free, open-source RTS spanning ancient civilizations. Build cities, raise armies, and wage war across historically inspired factions with AAA-quality art and gameplay.",
     .keys = keys, .category = "Strategy",
-    .engine = "Pyrogenesis", .repo = "https://github.com/0ad/0ad",
+    .engine = "Pyrogenesis", .website = "https://play0ad.com/",
+    .repo = "https://github.com/0ad/0ad",
     .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };

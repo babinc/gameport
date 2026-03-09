@@ -56,7 +56,8 @@ static const Game game_data = {
     .name = "OpenTTD", .icon = "O",
     .desc = "Open-source Transport Tycoon Deluxe. Build rail, road, air, and sea networks to transport passengers and cargo. Compete against AI or friends. Free assets included.",
     .keys = keys, .category = "Simulation",
-    .engine = "SDL2", .repo = "https://github.com/OpenTTD/OpenTTD",
+    .engine = "SDL2", .website = "https://www.openttd.org/",
+    .repo = "https://github.com/OpenTTD/OpenTTD",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

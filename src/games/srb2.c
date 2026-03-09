@@ -68,7 +68,8 @@ static const Game game_data = {
     .name = "Sonic Robo Blast 2", .icon = "B",
     .desc = "Fan-made 3D Sonic the Hedgehog platformer built on Doom engine. Singleplayer campaign, multiplayer modes, and mod support. Free game assets downloaded automatically.",
     .keys = keys, .category = "Platformer",
-    .engine = "Doom (SDL2)", .repo = "https://github.com/STJr/SRB2",
+    .engine = "Doom (SDL2)", .website = "https://www.srb2.org/",
+    .repo = "https://github.com/STJr/SRB2",
     .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_deps = 1,
     .sources = sources, .num_sources = 1,
 };

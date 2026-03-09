@@ -49,7 +49,8 @@ static const Game game_data = {
     .name = "Cataclysm: DDA", .icon = "C",
     .desc = "A turn-based survival roguelike set in a post-apocalyptic world. Craft, build, explore, and fight to survive against zombies, mutants, and the elements. Massive open world with deep simulation.",
     .keys = keys, .category = "Roguelike",
-    .engine = "ncurses", .repo = "https://github.com/CleverRaven/Cataclysm-DDA",
+    .engine = "ncurses", .website = "https://cataclysmdda.org/",
+    .repo = "https://github.com/CleverRaven/Cataclysm-DDA",
     .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };

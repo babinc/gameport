@@ -56,7 +56,8 @@ static const Game game_data = {
     .name = "Red Eclipse", .icon = "R",
     .desc = "Free open-source arena FPS with parkour movement, multiple game modes, and built-in map editor. Features impulse boosts, wallrunning, and diverse weapons.",
     .keys = keys, .category = "Shooter",
-    .engine = "Cube 2 (SDL2)", .repo = "https://github.com/redeclipse/base",
+    .engine = "Cube 2 (SDL2)", .website = "https://www.redeclipse.net/",
+    .repo = "https://github.com/redeclipse/base",
     .platforms = platforms, .platform_deps = deps, .num_deps = 1,
     .sources = sources, .num_sources = 1,
 };

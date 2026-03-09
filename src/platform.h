@@ -87,5 +87,6 @@ char *plat_which(const char *bin);   /* malloc'd path or NULL */
 /* ── Misc ────────────────────────────────────────────────────── */
 
 void plat_sleep_ms(int ms);
+void plat_open_url(const char *url);  /* open URL in default browser */
 
 #endif
