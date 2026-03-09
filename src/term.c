@@ -1,78 +1,20 @@
-#define _POSIX_C_SOURCE 200809L
 #include "term.h"
+#include "platform.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <poll.h>
 #include <math.h>
-
-/* Suppress warn_unused_result for terminal escape writes */
-#define WRITE(fd, buf, len) do { if (write(fd, buf, len)) {} } while(0)
-
-static struct termios orig_termios;
-static int raw_mode_on = 0;
 
 /* ── Terminal init / cleanup ──────────────────────────────────── */
 
-void term_init(void) {
-    tcgetattr(STDIN_FILENO, &orig_termios);
-    struct termios raw = orig_termios;
-    raw.c_iflag &= (unsigned)~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-    raw.c_oflag &= (unsigned)~(OPOST);
-    raw.c_cflag |= (CS8);
-    raw.c_lflag &= (unsigned)~(ECHO | ICANON | IEXTEN | ISIG);
-    raw.c_cc[VMIN] = 0;
-    raw.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-    raw_mode_on = 1;
+void term_init(void)    { plat_term_init(); }
+void term_cleanup(void) { plat_term_cleanup(); }
 
-    /* Alternate screen, hide cursor */
-    WRITE(STDOUT_FILENO, "\033[?1049h\033[?25l", 14);
-}
+void term_get_size(int *w, int *h) { plat_term_get_size(w, h); }
 
-void term_cleanup(void) {
-    /* Show cursor, leave alternate screen */
-    WRITE(STDOUT_FILENO, "\033[?25h\033[?1049l", 14);
-    if (raw_mode_on) {
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
-        raw_mode_on = 0;
-    }
-}
-
-void term_get_size(int *w, int *h) {
-    struct winsize ws;
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
-        *w = ws.ws_col;
-        *h = ws.ws_row;
-    } else {
-        *w = 80;
-        *h = 24;
-    }
-}
-
-/* ── Restore / re-enter raw mode for visible commands ─────────── */
-
-void term_restore(void) {
-    WRITE(STDOUT_FILENO, "\033[?25h\033[?1049l", 14);
-    if (raw_mode_on) {
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
-    }
-}
-
-void term_reenter(void) {
-    struct termios raw = orig_termios;
-    raw.c_iflag &= (unsigned)~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-    raw.c_oflag &= (unsigned)~(OPOST);
-    raw.c_cflag |= (CS8);
-    raw.c_lflag &= (unsigned)~(ECHO | ICANON | IEXTEN | ISIG);
-    raw.c_cc[VMIN] = 0;
-    raw.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-    WRITE(STDOUT_FILENO, "\033[?1049h\033[?25l", 14);
-}
+/* Used by run_visible in install.c */
+void term_restore(void) { plat_term_suspend(); }
+void term_reenter(void) { plat_term_resume(); }
 
 /* ── Screen buffer ────────────────────────────────────────────── */
 
@@ -141,7 +83,7 @@ static int utf8_encode(uint32_t cp, char *buf) {
 }
 
 void screen_flush(Screen *s) {
-    /* Build output in a buffer to minimize write() calls */
+    /* Build output in a buffer to minimize write calls */
     size_t cap = (size_t)(s->w * s->h) * 40;
     char *buf = malloc(cap);
     size_t pos = 0;
@@ -206,7 +148,7 @@ void screen_flush(Screen *s) {
     #undef EMIT
 
     if (pos > 0) {
-        WRITE(STDOUT_FILENO, buf, pos);
+        plat_term_write(buf, pos);
     }
     free(buf);
 
@@ -290,6 +232,7 @@ void scr_box(Screen *s, int x, int y, int w, int h, Color border) {
 }
 
 void scr_box_title(Screen *s, int x, int y, int w, const char *title, Color title_color, Color border) {
+    (void)w; (void)border;
     /* Draw " [ TITLE ] " on top border */
     int tx = x + 2;
     scr_str(s, tx, y, " [ ", CLR_DARKGRAY, CLR_BG, 0);
@@ -324,11 +267,10 @@ void scr_badge(Screen *s, int x, int y, const char *text, Color fg, Color bg, in
 
 KeyEvent term_poll_key(int timeout_ms) {
     KeyEvent ev = {KEY_NONE, 0};
-    struct pollfd pfd = { .fd = STDIN_FILENO, .events = POLLIN, .revents = 0 };
-    if (poll(&pfd, 1, timeout_ms) <= 0) return ev;
+    if (!plat_term_poll(timeout_ms)) return ev;
 
     unsigned char buf[8];
-    ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
+    int n = plat_term_read((char *)buf, (int)sizeof(buf));
     if (n <= 0) return ev;
 
     if (buf[0] == 27) {

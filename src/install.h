@@ -1,7 +1,7 @@
 #ifndef INSTALL_H
 #define INSTALL_H
 
-#include <sys/types.h>
+#include "platform.h"
 #include "catalog.h"
 
 /* ── Output line buffer (growable, capped) ────────────────────── */
@@ -19,8 +19,7 @@ void linebuf_free(LineBuf *lb);
 
 /* ── Child process state ──────────────────────────────────────── */
 typedef struct {
-    pid_t pid;        /* child PID, 0 if none */
-    int pipe_fd;      /* read end of stdout+stderr pipe, -1 if closed */
+    PlatProc proc;    /* platform process handle */
     int done;         /* 1 when child has exited */
     int ok;           /* 1 if child exited successfully */
     LineBuf output;

@@ -1,7 +1,7 @@
 CC      = cc
 CFLAGS  = -std=c99 -Wall -Wextra -pedantic -O2
 LDFLAGS = -lm
-SRC     = src/main.c src/term.c src/ui.c src/catalog.c src/install.c src/util.c
+SRC     = src/main.c src/term.c src/ui.c src/catalog.c src/install.c src/util.c src/platform_posix.c
 GAMESRC = $(wildcard src/games/*.c)
 OBJ     = $(SRC:.c=.o) $(GAMESRC:.c=.o)
 BIN     = gameport

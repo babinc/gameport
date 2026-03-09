@@ -1,39 +1,19 @@
 #define _POSIX_C_SOURCE 200809L
 #include "util.h"
+#include "platform.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <fcntl.h>
 #include <ctype.h>
-#include <errno.h>
 
 /* ── which ────────────────────────────────────────────────────── */
 
 char *which_path(const char *bin) {
-    const char *path = getenv("PATH");
-    if (!path) return NULL;
-
-    char *dup = strdup(path);
-    char *saveptr = NULL;
-    char *dir = strtok_r(dup, ":", &saveptr);
-    while (dir) {
-        char full[1024];
-        snprintf(full, sizeof(full), "%s/%s", dir, bin);
-        if (access(full, X_OK) == 0) {
-            free(dup);
-            return strdup(full);
-        }
-        dir = strtok_r(NULL, ":", &saveptr);
-    }
-    free(dup);
-    return NULL;
+    return plat_which(bin);
 }
 
 int which(const char *bin) {
-    char *p = which_path(bin);
+    char *p = plat_which(bin);
     if (p) { free(p); return 1; }
     return 0;
 }
@@ -67,19 +47,6 @@ const char *runtime_install_hint(MethodType method) {
 
 /* ── Path helpers ─────────────────────────────────────────────── */
 
-static void mkdir_p(const char *path) {
-    char tmp[1024];
-    snprintf(tmp, sizeof(tmp), "%s", path);
-    for (char *p = tmp + 1; *p; p++) {
-        if (*p == '/') {
-            *p = '\0';
-            mkdir(tmp, 0755);
-            *p = '/';
-        }
-    }
-    mkdir(tmp, 0755);
-}
-
 /* OS-aware base data directory for gameport */
 static void data_base(char *buf, size_t buflen) {
     const char *home = getenv("HOME");
@@ -102,7 +69,7 @@ static char *sub_dir(const char *name) {
     data_base(base, sizeof(base));
     char buf[1024];
     snprintf(buf, sizeof(buf), "%s/%s", base, name);
-    mkdir_p(buf);
+    plat_mkdir_p(buf);
     return strdup(buf);
 }
 
@@ -111,23 +78,7 @@ char *logs_dir(void)  { return sub_dir("logs"); }
 
 int deps_check_satisfied(const PlatformDeps *deps) {
     if (!deps->check_cmd || !deps->check_cmd[0]) return 0;
-    pid_t pid = fork();
-    if (pid == 0) {
-        /* Redirect to /dev/null */
-        int fd = open("/dev/null", O_WRONLY);
-        if (fd >= 0) { dup2(fd, STDOUT_FILENO); dup2(fd, STDERR_FILENO); close(fd); }
-        /* Count args */
-        int n = 0;
-        while (deps->check_cmd[n]) n++;
-        char **argv = malloc((size_t)(n + 1) * sizeof(char *));
-        for (int i = 0; i < n; i++) argv[i] = (char *)deps->check_cmd[i];
-        argv[n] = NULL;
-        execvp(argv[0], argv);
-        _exit(127);
-    }
-    int status;
-    waitpid(pid, &status, 0);
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    return plat_run_silent(deps->check_cmd, NULL);
 }
 
 int is_git_cloned_not_ready(const Game *g) {
@@ -139,8 +90,7 @@ int is_git_cloned_not_ready(const Game *g) {
     snprintf(git_path, sizeof(git_path), "%s/%s/.git", gdir, src->clone_dir);
     snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->clone_dir, src->play_cmd[0]);
     free(gdir);
-    struct stat st;
-    return (stat(git_path, &st) == 0) && (stat(bin_path, &st) != 0);
+    return plat_file_exists(git_path) && !plat_file_exists(bin_path);
 }
 
 int is_installed(const Game *g) {
@@ -153,8 +103,7 @@ int is_installed(const Game *g) {
         char path[1024];
         snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->clone_dir, src->play_cmd[0]);
         free(gdir);
-        struct stat st;
-        return stat(path, &st) == 0;
+        return plat_file_exists(path);
     }
     /* cargo — check bin on PATH */
     return which(src->bin);

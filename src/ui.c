@@ -81,8 +81,7 @@ void app_init(App *app) {
     app->install_methods = calloc((size_t)NUM_GAMES, sizeof(char *));
     app->filtered = malloc((size_t)(NUM_GAMES + NUM_CATEGORIES) * sizeof(int));
     app->toolchains = toolchains_detect();
-    app->child.pid = 0;
-    app->child.pipe_fd = -1;
+    memset(&app->child.proc, 0, sizeof(app->child.proc));
     app->mode = MODE_NORMAL;
     app->panel_label = "INSTALLING";
     app_refresh(app);
@@ -113,7 +112,7 @@ void app_cleanup(App *app) {
     free(app->install_methods);
     free(app->filtered);
     free(app->last_log);
-    if (app->child.pid > 0) child_kill(&app->child);
+    if (!app->child.done) child_kill(&app->child);
     child_cleanup(&app->child);
 }
 

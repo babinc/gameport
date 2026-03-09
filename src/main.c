@@ -1,22 +1,28 @@
+#ifndef _WIN32
 #define _POSIX_C_SOURCE 200809L
+#include <signal.h>
+#endif
+
 #include "term.h"
 #include "ui.h"
 #include "catalog.h"
 #include "install.h"
 #include "util.h"
+#include "platform.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <time.h>
 
+#ifndef _WIN32
 static volatile int g_resize = 0;
 
 static void sigwinch_handler(int sig) {
     (void)sig;
     g_resize = 1;
 }
+#endif
 
 /* ── Helpers to build & start install/uninstall ───────────────── */
 
@@ -220,8 +226,6 @@ static void close_panel(App *app) {
     *cursor = '\0';
 
     child_cleanup(&app->child);
-    app->child.pipe_fd = -1;
-    app->child.pid = 0;
     app_refresh(app);
     app_rebuild_filter(app);
 
@@ -240,12 +244,14 @@ static void close_panel(App *app) {
 /* ── Main ─────────────────────────────────────────────────────── */
 
 int main(void) {
+#ifndef _WIN32
     /* Handle SIGWINCH for terminal resize */
     struct sigaction sa;
     sa.sa_handler = sigwinch_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
     sigaction(SIGWINCH, &sa, NULL);
+#endif
 
     catalog_init();
     term_init();
@@ -259,11 +265,22 @@ int main(void) {
 
     while (!app.should_quit) {
         /* Handle resize */
+#ifndef _WIN32
         if (g_resize) {
             g_resize = 0;
             term_get_size(&w, &h);
             screen_resize(scr, w, h);
         }
+#else
+        {
+            int nw, nh;
+            term_get_size(&nw, &nh);
+            if (nw != w || nh != h) {
+                w = nw; h = nh;
+                screen_resize(scr, w, h);
+            }
+        }
+#endif
 
         /* Poll child process for output */
         if ((app.mode == MODE_INSTALLING || app.mode == MODE_RUNNING) && !app.child.done) {
@@ -301,8 +318,6 @@ int main(void) {
                 } else if (key.type == KEY_ESC && app.mode == MODE_RUNNING) {
                     child_kill(&app.child);
                     child_cleanup(&app.child);
-                    app.child.pipe_fd = -1;
-                    app.child.pid = 0;
                     app_refresh(&app);
                     app_rebuild_filter(&app);
                     app.mode = MODE_NORMAL;
