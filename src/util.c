@@ -89,11 +89,13 @@ int deps_check_satisfied(const PlatformDeps *deps) {
 int is_git_cloned_not_ready(const Game *g) {
     const Source *src = default_source(g);
     if (!src || src->method != ACQUIRE_GIT) return 0;
-    if (!src->play_cmd || !src->play_cmd[0]) return 0;
+    const char *check = src->bin;
+    if (!check) check = (src->play_cmd && src->play_cmd[0]) ? src->play_cmd[0] : NULL;
+    if (!check) return 0;
     char *gdir = games_dir();
     char git_path[1024], bin_path[1024];
     snprintf(git_path, sizeof(git_path), "%s/%s/.git", gdir, src->clone_dir);
-    snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->clone_dir, src->play_cmd[0]);
+    snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->clone_dir, check);
     free(gdir);
     return plat_file_exists(git_path) && !plat_file_exists(bin_path);
 }
@@ -103,10 +105,13 @@ int is_installed(const Game *g) {
     if (!src) return 0;
 
     if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
-        if (!src->play_cmd || !src->play_cmd[0]) return 0;
+        /* Use .bin for install detection (play_cmd[0] may be "bash") */
+        const char *check = src->bin;
+        if (!check) check = (src->play_cmd && src->play_cmd[0]) ? src->play_cmd[0] : NULL;
+        if (!check) return 0;
         char *gdir = games_dir();
         char path[1024];
-        snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->clone_dir, src->play_cmd[0]);
+        snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->clone_dir, check);
         free(gdir);
         return plat_file_exists(path);
     }

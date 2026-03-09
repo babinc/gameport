@@ -24,7 +24,7 @@ static const char *build[] = {
     "make bin/brogue",
     NULL
 };
-static const char *play[] = {"./bin/brogue", NULL};
+static const char *play[] = {"bash", "-c", "cd bin && ./brogue", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "make", "gcc", "diffutils", "libsdl2-dev", "libsdl2-image-dev", NULL};
@@ -43,7 +43,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/tmewett/BrogueCE.git",
     .clone_dir = "brogue-ce", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "brogue",
+    .bin = "bin/brogue",
 }};
 
 static const Game game_data = {
