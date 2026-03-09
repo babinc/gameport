@@ -5,13 +5,17 @@ C99 terminal application that discovers, installs, and launches open-source game
 ## Build & Run
 
 ```bash
-make            # build (cc, c99, -Wall -Wextra -pedantic)
-make debug      # build with -g -O0
-make clean      # remove .o and binary
-./gameport      # run
+cmake -B build -DCMAKE_BUILD_TYPE=Debug    # configure
+cmake --build build                         # build
+./build/gameport                            # run
 ```
 
-Smoke test: `timeout 1 ./gameport` — exit code 124 (killed by timeout) is normal, not a crash.
+Release build: `cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build`
+
+Smoke test: `timeout 1 ./build/gameport` — exit code 124 (killed by timeout) is normal, not a crash.
+
+Cross-platform: CMake handles Linux (GCC/Clang), macOS (AppleClang), and Windows (MSVC).
+Version is set in `CMakeLists.txt` via `project(VERSION X.Y.Z)` and passed as `GAMEPORT_VERSION` define.
 
 ## Architecture
 
@@ -25,7 +29,7 @@ src/
   term.c / term.h  — terminal abstraction (Screen, KeyEvent, colors)
   platform.h       — cross-platform API (PlatProc, filesystem, terminal)
   platform_posix.c — POSIX implementation
-  platform_win32.c — Windows implementation (stub)
+  platform_win32.c — Windows implementation
   games/
     registry.c     — master game list (function pointer table)
     *.c            — one file per game (static data, no logic)
@@ -37,7 +41,7 @@ src/
 
 1. Create `src/games/<name>.c` with static data: keys, sources, deps, game_data
 2. Add `const Game *game_<name>(void);` declaration and entry in `src/games/registry.c`
-3. The Makefile wildcard picks up new .c files automatically — no Makefile changes needed
+3. CMake `file(GLOB)` picks up new .c files automatically — no CMakeLists.txt changes needed
 
 ### Game File Template
 
