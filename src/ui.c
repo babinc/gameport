@@ -111,6 +111,8 @@ void app_cleanup(App *app) {
     free(app->install_methods);
     free(app->filtered);
     free(app->last_log);
+    if (app->next_cmd) free_cmd(app->next_cmd);
+    free(app->next_cwd);
     if (!app->child.done) child_kill(&app->child);
     child_cleanup(&app->child);
 }
