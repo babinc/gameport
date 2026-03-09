@@ -28,7 +28,7 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", NULL};
+static const char *platforms[] = {"linux", "macos", NULL};
 
 static const char *build[] = {
     "bash", "-c",
@@ -38,7 +38,7 @@ static const char *build[] = {
     "echo 'Configuring cmake...'\n"
     "cmake -DCMAKE_BUILD_TYPE=Release ..\n"
     "echo 'Building (this may take a while)...'\n"
-    "make -j$(nproc)",
+    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
     NULL
 };
 static const char *play[] = {"./build/src/warzone2100", NULL};
@@ -51,10 +51,17 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "libfribidi-dev", "libharfbuzz-dev", "libcurl4-gnutls-dev",
     "libsodium-dev", "libsqlite3-dev", "libzip-dev", NULL};
 static const char *linux_check[] = {"dpkg", "-s", "libphysfs-dev", NULL};
+static const char *mac_install[] = {"brew", "install", "cmake", "pkg-config",
+    "gettext", "physfs", "openal-soft", "libvorbis", "opus", "theora",
+    "freetype", "fribidi", "harfbuzz", "libsodium", "sqlite",
+    "libzip", "libpng", NULL};
+static const char *mac_check[] = {"brew", "list", "physfs", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "build-essential cmake libphysfs-dev libpng-dev libopenal-dev ...",
       linux_install, linux_check, 1 },
+    { "macos", "cmake physfs openal-soft libvorbis freetype harfbuzz ...",
+      mac_install, mac_check, 0 },
 };
 
 static const Source sources[] = {{
@@ -70,7 +77,7 @@ static const Game game_data = {
     .desc = "Open-source real-time strategy set in a post-apocalyptic future. Research tech, design vehicles, and command armies. Fully free with campaign and multiplayer.",
     .keys = keys, .category = "Strategy",
     .engine = "custom (OpenGL)", .repo = "https://github.com/Warzone2100/warzone2100",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 1,
+    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

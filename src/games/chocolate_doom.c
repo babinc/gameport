@@ -26,7 +26,7 @@ static const char *build[] = {
     "set -e && "
     "mkdir -p build && cd build && "
     "cmake .. -DCMAKE_BUILD_TYPE=Release && "
-    "make -j$(nproc) && "
+    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4) && "
     "cd .. && "
     "echo 'Downloading Freedoom WADs...' && "
     "mkdir -p wads && "
@@ -43,7 +43,7 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libsdl2-dev", "libsdl2-mixer-dev",
     "libsdl2-net-dev", "libpng-dev", "unzip", "curl", NULL};
 static const char *linux_check[] = {"dpkg", "-s", "libsdl2-net-dev", NULL};
-static const char *mac_install[] = {"brew", "install", "sdl2", "sdl2_mixer", "sdl2_net", "libpng", NULL};
+static const char *mac_install[] = {"brew", "install", "sdl2", "sdl2_mixer", "sdl2_net", "libpng", "libsamplerate", "fluid-synth", NULL};
 static const char *mac_check[] = {"brew", "list", "sdl2_net", NULL};
 
 static const PlatformDeps deps[] = {

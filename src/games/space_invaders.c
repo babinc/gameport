@@ -9,7 +9,7 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "windows", "macos", NULL};
+static const char *platforms[] = {"linux", "macos", NULL};
 
 static const char *build[] = {
     "bash", "-c",
@@ -40,7 +40,6 @@ static const char *mac_check[] = {"xcode-select", "-p", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "build-essential cmake libgl1-mesa-dev", linux_install, linux_check, 1 },
-    { "windows", "Visual Studio Build Tools", NULL, NULL, 0 },
     { "macos", "Xcode CLI tools", mac_install, mac_check, 0 },
 };
 
@@ -57,7 +56,7 @@ static const Game game_data = {
     .desc = "Classic Space Invaders in a graphical window. Shoot descending waves of aliens before they reach the bottom. Built with raylib -- pure C, zero dependencies.",
     .keys = keys, .category = "Action",
     .engine = "raylib", .repo = "https://github.com/raysan5/raylib-games",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 3,
+    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

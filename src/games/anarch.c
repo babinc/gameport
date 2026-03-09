@@ -19,7 +19,7 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "windows", "macos", NULL};
+static const char *platforms[] = {"linux", "macos", NULL};
 static const char *build[] = {"bash", "make.sh", "sdl", NULL};
 static const char *play[] = {"./anarch", NULL};
 static const char *uninstall[] = {"git-game-remove", "anarch", NULL};
@@ -30,7 +30,6 @@ static const char *mac_check[] = {"brew", "list", "sdl2", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "libsdl2-dev g++", linux_install, linux_check, 1 },
-    { "windows", "SDL2, MinGW or MSVC", NULL, NULL, 0 },
     { "macos", "SDL2", mac_install, mac_check, 0 },
 };
 
@@ -47,7 +46,7 @@ static const Game game_data = {
     .desc = "Retro first-person shooter inspired by Doom. 10 levels, multiple weapons, all assets embedded in source code. Tiny, fast, zero external files needed.",
     .keys = keys, .category = "Action",
     .engine = "SDL2", .repo = "https://gitlab.com/drummyfish/anarch",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 3,
+    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

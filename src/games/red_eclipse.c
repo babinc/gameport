@@ -26,7 +26,7 @@ static const char *build[] = {
     "bash", "-c",
     "set -e\n"
     "echo 'Building Red Eclipse...'\n"
-    "make -C src install -j$(nproc)",
+    "make -C src install -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
     NULL
 };
 static const char *play[] = {"./redeclipse.sh", NULL};

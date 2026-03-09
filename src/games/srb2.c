@@ -24,7 +24,7 @@ static const char *build[] = {
     "bash", "-c",
     "set -e\n"
     "echo 'Building SRB2...'\n"
-    "make -j$(nproc)\n"
+    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)\n"
     "echo 'Downloading game assets...'\n"
     "ASSETS_DIR=\"$HOME/.srb2\"\n"
     "mkdir -p \"$ASSETS_DIR\"\n"

@@ -50,7 +50,7 @@ static const char *build[] = {
     "echo 'Configuring cmake...'\n"
     "cmake -DCMAKE_BUILD_TYPE=Release ..\n"
     "echo 'Building...'\n"
-    "make -j$(nproc)\n"
+    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)\n"
     "cp thedarkmod.x64 ../../darkmod/ 2>/dev/null || true",
     NULL
 };

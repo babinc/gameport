@@ -25,7 +25,7 @@ static const char *build[] = {
     "echo 'Configuring cmake...'\n"
     "cmake .. -DCMAKE_BUILD_TYPE=Release\n"
     "echo 'Building (this may take a while)...'\n"
-    "make -j$(nproc)",
+    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
     NULL
 };
 static const char *play[] = {"./build/openttd", NULL};
