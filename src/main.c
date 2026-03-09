@@ -123,12 +123,61 @@ static void start_git_remove(App *app, const Source *src) {
     app->child.done = 1;
 }
 
+static void start_download_acquire(App *app, const Source *src) {
+    char *gdir = games_dir();
+    char game_path[1024];
+    snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->clone_dir);
+
+    /* Chain the build command if any */
+    if (src->build_cmd && src->build_cmd[0]) {
+        chain_next(app, src->build_cmd, game_path);
+    }
+
+    /* Build a bash script: mkdir, curl, extract */
+    char script[4096];
+    if (src->archive_type && strcmp(src->archive_type, "tar.gz") == 0) {
+        snprintf(script, sizeof(script),
+            "set -e\n"
+            "mkdir -p '%s'\n"
+            "echo 'Downloading %s...'\n"
+            "curl -fSL '%s' | tar xz -C '%s' --strip-components=1\n"
+            "echo 'Done!'",
+            game_path, src->clone_dir, src->clone_url, game_path);
+    } else if (src->archive_type && strcmp(src->archive_type, "zip") == 0) {
+        snprintf(script, sizeof(script),
+            "set -e\n"
+            "mkdir -p '%s'\n"
+            "echo 'Downloading %s...'\n"
+            "curl -fSL -o /tmp/_gp_dl.zip '%s'\n"
+            "unzip -o /tmp/_gp_dl.zip -d '%s'\n"
+            "rm -f /tmp/_gp_dl.zip\n"
+            "echo 'Done!'",
+            game_path, src->clone_dir, src->clone_url, game_path);
+    } else {
+        /* Raw binary download */
+        snprintf(script, sizeof(script),
+            "set -e\n"
+            "mkdir -p '%s'\n"
+            "echo 'Downloading %s...'\n"
+            "curl -fSL -o '%s/%s' '%s'\n"
+            "chmod +x '%s/%s'\n"
+            "echo 'Done!'",
+            game_path, src->clone_dir,
+            game_path, src->bin, src->clone_url,
+            game_path, src->bin);
+    }
+    const char *cmd[] = {"bash", "-c", script, NULL};
+    child_start(&app->child, cmd, NULL);
+    free(gdir);
+}
+
 /* ── Start install/uninstall with a chosen source ────────────── */
 
 static void begin_install(App *app, const Source *src) {
     switch (src->method) {
-    case ACQUIRE_CARGO: start_cargo_install(app, src); break;
-    case ACQUIRE_GIT:   start_git_acquire(app, src); break;
+    case ACQUIRE_CARGO:    start_cargo_install(app, src);    break;
+    case ACQUIRE_GIT:      start_git_acquire(app, src);      break;
+    case ACQUIRE_DOWNLOAD: start_download_acquire(app, src); break;
     }
     app->panel_label = "INSTALLING";
     app->mode = MODE_INSTALLING;
@@ -139,8 +188,9 @@ static void begin_install(App *app, const Source *src) {
 static void begin_uninstall(App *app, const Source *src) {
     kill_game_process(src->bin);
     switch (src->method) {
-    case ACQUIRE_CARGO: start_cargo_uninstall(app, src); break;
-    case ACQUIRE_GIT:   start_git_remove(app, src); break;
+    case ACQUIRE_CARGO:    start_cargo_uninstall(app, src); break;
+    case ACQUIRE_GIT:      start_git_remove(app, src);      break;
+    case ACQUIRE_DOWNLOAD: start_git_remove(app, src);      break;  /* same: rm dir */
     }
     app->panel_label = "REMOVING";
     app->mode = MODE_INSTALLING;
@@ -514,10 +564,21 @@ int main(void) {
 
                     /* Terminal games need the full terminal */
                     int is_terminal = (strcmp(g->engine, "crossterm") == 0 ||
-                                       strcmp(g->engine, "ratatui") == 0);
+                                       strcmp(g->engine, "ratatui") == 0 ||
+                                       strcmp(g->engine, "ncurses") == 0);
                     if (is_terminal) {
                         const char *cmd[8];
+                        const char *cwd = NULL;
+                        char cwd_buf[1024];
                         int ci = 0;
+
+                        if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
+                            char *gdir = games_dir();
+                            snprintf(cwd_buf, sizeof(cwd_buf), "%s/%s", gdir, src->clone_dir);
+                            free(gdir);
+                            cwd = cwd_buf;
+                        }
+
                         if (src->play_cmd && src->play_cmd[0]) {
                             for (int i = 0; src->play_cmd[i] && ci < 7; i++)
                                 cmd[ci++] = src->play_cmd[i];
@@ -528,7 +589,7 @@ int main(void) {
 
                         /* Need full redraw after */
                         screen_resize(scr, w, h);
-                        int ok = run_visible(cmd, NULL);
+                        int ok = run_visible(cmd, cwd);
                         term_get_size(&w, &h);
                         screen_resize(scr, w, h);
                         if (!ok) {
@@ -545,7 +606,7 @@ int main(void) {
                         char cwd_buf[1024];
                         int ci = 0;
 
-                        if (src->method == ACQUIRE_GIT) {
+                        if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
                             char *gdir = games_dir();
                             snprintf(cwd_buf, sizeof(cwd_buf), "%s/%s", gdir, src->clone_dir);
                             free(gdir);
@@ -599,6 +660,10 @@ int main(void) {
                     app_refresh(&app);
                     app_rebuild_filter(&app);
                     app_set_message(&app, "Refreshed!", 1);
+                } else if (key.ch == 'p') {
+                    app.plat_filter = (app.plat_filter + 1) % 4;
+                    app.selected = 0;
+                    app_rebuild_filter(&app);
                 } else if (key.ch == 'c') {
                     if (app.filter_count > 0 && !IS_HEADER(app.filtered[app.selected])) {
                         app.mode = MODE_CONTROLS;

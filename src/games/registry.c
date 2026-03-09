@@ -23,6 +23,8 @@ const Game *game_nethack(void);
 const Game *game_ttyper(void);
 const Game *game_wesnoth(void);
 const Game *game_endless_sky(void);
+const Game *game_dcss(void);
+const Game *game_supertux(void);
 
 typedef const Game *(*GameFn)(void);
 
@@ -49,6 +51,8 @@ static const GameFn game_fns[] = {
     game_ttyper,
     game_wesnoth,
     game_endless_sky,
+    game_dcss,
+    game_supertux,
 };
 
 #define MAX_GAMES 32

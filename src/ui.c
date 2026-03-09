@@ -15,6 +15,21 @@ static const char *CATEGORIES[] = {
 };
 const int NUM_CATEGORIES = sizeof(CATEGORIES) / sizeof(CATEGORIES[0]);
 
+/* Platform filter options */
+static const char *PLAT_LABELS[] = {"All", "Linux", "macOS", "Windows"};
+static const char *PLAT_IDS[]    = {NULL,  "linux", "macos", "windows"};
+#define NUM_PLAT_FILTERS 4
+
+static int game_matches_plat_filter(const Game *g, int plat_filter) {
+    if (plat_filter == 0) return 1;  /* "All" */
+    const char *plat = PLAT_IDS[plat_filter];
+    if (!g->platforms) return 1;     /* NULL = supports all */
+    for (int i = 0; g->platforms[i]; i++) {
+        if (strcmp(g->platforms[i], plat) == 0) return 1;
+    }
+    return 0;
+}
+
 static int search_matches(const char *name, const char *search, int search_len) {
     for (int n = 0; name[n]; n++) {
         int match = 1;
@@ -30,9 +45,10 @@ static int search_matches(const char *name, const char *search, int search_len) 
 void app_rebuild_filter(App *app) {
     app->filter_count = 0;
 
-    /* Compute per-category counts (used by renderers too) */
+    /* Compute per-category counts (respecting platform filter) */
     memset(app->cat_counts, 0, sizeof(app->cat_counts));
     for (int i = 0; i < NUM_GAMES; i++) {
+        if (!game_matches_plat_filter(&GAMES[i], app->plat_filter)) continue;
         for (int c = 1; c < NUM_CATEGORIES; c++) {
             if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0) {
                 app->cat_counts[c]++;
@@ -50,6 +66,7 @@ void app_rebuild_filter(App *app) {
 
             if (!app->cat_collapsed[c]) {
                 for (int i = 0; i < NUM_GAMES; i++) {
+                    if (!game_matches_plat_filter(&GAMES[i], app->plat_filter)) continue;
                     if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0)
                         app->filtered[app->filter_count++] = i;
                 }
@@ -60,6 +77,7 @@ void app_rebuild_filter(App *app) {
         const char *cat = (app->cat_index == 0) ? NULL : CATEGORIES[app->cat_index];
 
         for (int i = 0; i < NUM_GAMES; i++) {
+            if (!game_matches_plat_filter(&GAMES[i], app->plat_filter)) continue;
             if (cat && strcmp(GAMES[i].category, cat) != 0) continue;
             if (app->search_len > 0 && !search_matches(GAMES[i].name, app->search, app->search_len))
                 continue;
@@ -158,11 +176,15 @@ static void render_header(Screen *s, App *app) {
     /* Right side: toolchain badges + game count */
     int rx = s->w - 1;
 
-    /* Game count badge */
-    int inst_count = 0;
-    for (int i = 0; i < NUM_GAMES; i++) if (app->installed[i]) inst_count++;
+    /* Game count badge (respects platform filter) */
+    int inst_count = 0, total_count = 0;
+    for (int i = 0; i < NUM_GAMES; i++) {
+        if (!game_matches_plat_filter(&GAMES[i], app->plat_filter)) continue;
+        total_count++;
+        if (app->installed[i]) inst_count++;
+    }
     char countbuf[16];
-    snprintf(countbuf, sizeof(countbuf), "%d/%d", inst_count, NUM_GAMES);
+    snprintf(countbuf, sizeof(countbuf), "%d/%d", inst_count, total_count);
     int clen = (int)strlen(countbuf) + 2; /* +2 for padding */
     rx -= clen;
     scr_badge(s, rx, 0, countbuf, CLR_BLACK, CLR_CYAN, 1);
@@ -170,6 +192,7 @@ static void render_header(Screen *s, App *app) {
 
     /* Toolchain badges */
     struct { const char *name; int found; } tools[] = {
+        {"curl", app->toolchains.curl},
         {"python", app->toolchains.python},
         {"make", app->toolchains.make},
         {"cmake", app->toolchains.cmake},
@@ -223,6 +246,39 @@ static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
     if (app->cat_index < NUM_CATEGORIES - 1)
         scr_put(s, x + w - 2, y, 0x25B6, CLR_HINT, CLR_BG, 0); /* ▶ */
 
+    /* Platform filter bar (row below box title) */
+    int plat_row = y + 1;
+    {
+        Color bar_bg = (Color){22,22,35};
+        scr_fill(s, x + 1, plat_row, w - 2, 1, bar_bg);
+        int px = x + 2;
+        for (int p = 0; p < NUM_PLAT_FILTERS; p++) {
+            int is_active = (p == app->plat_filter);
+            Color fg, bg;
+            if (is_active) {
+                fg = CLR_BLACK;
+                /* Colored pill per platform */
+                if (p == 0)      bg = CLR_CYAN;                 /* All */
+                else if (p == 1) bg = (Color){220,180,50};      /* Linux */
+                else if (p == 2) bg = (Color){180,180,200};     /* macOS */
+                else             bg = (Color){80,160,230};      /* Windows */
+            } else {
+                fg = (Color){100,100,120};
+                bg = bar_bg;
+            }
+            if (is_active) {
+                /* Render as pill badge */
+                px += scr_str_n(s, px, plat_row, " ", 1, fg, bg, 0);
+                px += scr_str_n(s, px, plat_row, PLAT_LABELS[p], w - (px - x) - 2, fg, bg, 1);
+                px += scr_str_n(s, px, plat_row, " ", 1, fg, bg, 0);
+            } else {
+                px += scr_str_n(s, px, plat_row, " ", 1, fg, bar_bg, 0);
+                px += scr_str_n(s, px, plat_row, PLAT_LABELS[p], w - (px - x) - 2, fg, bar_bg, 0);
+            }
+            px++; /* gap between options */
+        }
+    }
+
     /* Search bar (bottom of box, inside) */
     int search_row = y + h - 2;
     if (app->mode == MODE_SEARCH) {
@@ -239,7 +295,7 @@ static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
         scr_str_n(s, sx, search_row, app->search, w - 4, CLR_HINT, CLR_BG, 0);
     }
 
-    int list_h = h - 2;
+    int list_h = h - 3; /* -2 for box border, -1 for platform filter bar */
     /* Reserve a row for search bar when searching or have active search */
     if (app->mode == MODE_SEARCH || app->search_len > 0) list_h--;
     if (list_h < 1) return;
@@ -270,7 +326,7 @@ static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
 
     for (int i = 0; i < list_h && scroll + i < total; i++) {
         int val = app->filtered[scroll + i];
-        int row = y + 1 + i;
+        int row = y + 2 + i; /* +2: border + platform filter bar */
         int is_sel = (scroll + i == app->selected);
 
         if (IS_HEADER(val)) {
@@ -861,12 +917,12 @@ static void render_footer(Screen *s, App *app, int y) {
         struct { const char *key; const char *label; Color color; } keys[] = {
             {"j/k", "nav", CLR_CYAN},
             {"h/l", "cat", (Color){180,140,220}},
+            {"p", "platform", (Color){220,180,50}},
             {"/", "search", CLR_YELLOW},
             {"Enter", "play", CLR_GREEN},
             {"i", "install", CLR_YELLOW},
             {"d", "remove", CLR_RED},
-            {"c", "controls", (Color){220,180,100}},
-            {"-/=", "fold", CLR_HINT},
+            {"c", "keys", (Color){220,180,100}},
             {NULL, NULL, CLR_NONE},
         };
         for (int ki = 0; keys[ki].key; ki++) {

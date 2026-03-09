@@ -10,8 +10,9 @@ const char *MAC_XCODE_CHECK[]   = {"xcode-select", "-p", NULL};
 
 const char *acquire_str(AcquireMethod m) {
     switch (m) {
-    case ACQUIRE_CARGO: return "cargo";
-    case ACQUIRE_GIT:   return "git";
+    case ACQUIRE_CARGO:    return "cargo";
+    case ACQUIRE_GIT:      return "git";
+    case ACQUIRE_DOWNLOAD: return "curl";
     }
     return "unknown";
 }

@@ -4,7 +4,7 @@
 #include <stddef.h>   /* NULL */
 
 /* ── Acquire method ──────────────────────────────────────────── */
-typedef enum { ACQUIRE_CARGO, ACQUIRE_GIT } AcquireMethod;
+typedef enum { ACQUIRE_CARGO, ACQUIRE_GIT, ACQUIRE_DOWNLOAD } AcquireMethod;
 const char *acquire_str(AcquireMethod m);
 
 /* ── Platform deps ────────────────────────────────────────────── */
@@ -22,10 +22,11 @@ typedef struct {
     const char *label;          /* shown in UI */
     const char **platforms;     /* NULL-terminated, NULL = all */
 
-    /* Acquire */
-    const char *clone_url;
-    const char *clone_dir;
-    int shallow;
+    /* Acquire (git clone or download) */
+    const char *clone_url;      /* git URL or download URL */
+    const char *clone_dir;      /* local directory name */
+    int shallow;                /* git: shallow clone */
+    const char *archive_type;   /* download: NULL=raw binary, "tar.gz", "zip" */
 
     /* Build */
     const char **build_cmd;     /* NULL-terminated */

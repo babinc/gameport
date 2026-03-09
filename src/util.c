@@ -29,21 +29,24 @@ Toolchains toolchains_detect(void) {
     tc.cmake  = which("cmake");
     tc.make   = which("make");
     tc.git    = which("git");
+    tc.curl   = which("curl");
     return tc;
 }
 
 int has_runtime(const Toolchains *tc, AcquireMethod method) {
     switch (method) {
-    case ACQUIRE_CARGO: return tc->cargo;
-    case ACQUIRE_GIT:   return tc->git;
+    case ACQUIRE_CARGO:    return tc->cargo;
+    case ACQUIRE_GIT:      return tc->git;
+    case ACQUIRE_DOWNLOAD: return tc->curl;
     }
     return 1;
 }
 
 const char *runtime_install_hint(AcquireMethod method) {
     switch (method) {
-    case ACQUIRE_CARGO: return "Install Rust: https://rustup.rs";
-    case ACQUIRE_GIT:   return "Install Git: https://git-scm.com";
+    case ACQUIRE_CARGO:    return "Install Rust: https://rustup.rs";
+    case ACQUIRE_GIT:      return "Install Git: https://git-scm.com";
+    case ACQUIRE_DOWNLOAD: return "Install curl: https://curl.se";
     }
     return "Unknown runtime";
 }
@@ -100,7 +103,7 @@ int is_installed(const Game *g) {
     const Source *src = default_source(g);
     if (!src) return 0;
 
-    if (src->method == ACQUIRE_GIT) {
+    if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
         if (!src->play_cmd || !src->play_cmd[0]) return 0;
         char *gdir = games_dir();
         char path[1024];

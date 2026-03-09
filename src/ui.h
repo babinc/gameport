@@ -67,6 +67,9 @@ typedef struct {
 
     /* Source selection */
     int source_selected;      /* cursor in source picker */
+
+    /* Platform filter */
+    int plat_filter;          /* 0 = all, 1 = linux, 2 = macos, 3 = windows */
 } App;
 
 /* ── Filtered list encoding ──────────────────────────────────── */

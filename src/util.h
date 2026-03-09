@@ -11,6 +11,7 @@ typedef struct {
     int cmake;
     int make;
     int git;
+    int curl;
 } Toolchains;
 
 Toolchains toolchains_detect(void);
