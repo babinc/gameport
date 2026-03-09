@@ -84,12 +84,12 @@ void plat_term_init(void) {
     raw_mode_on = 1;
 
     /* Alternate screen + hide cursor */
-    plat_term_write("\033[?1049h\033[?25l", 14);
+    plat_term_write(TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN);
 }
 
 void plat_term_cleanup(void) {
     /* Show cursor + leave alternate screen */
-    plat_term_write("\033[?25h\033[?1049l", 14);
+    plat_term_write(TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN);
 
     if (raw_mode_on) {
         HANDLE hIn  = GetStdHandle(STD_INPUT_HANDLE);
@@ -103,7 +103,7 @@ void plat_term_cleanup(void) {
 }
 
 void plat_term_suspend(void) {
-    plat_term_write("\033[?25h\033[?1049l", 14);
+    plat_term_write(TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN);
     if (raw_mode_on) {
         HANDLE hIn  = GetStdHandle(STD_INPUT_HANDLE);
         HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -114,7 +114,7 @@ void plat_term_suspend(void) {
 
 void plat_term_resume(void) {
     set_raw_mode();
-    plat_term_write("\033[?1049h\033[?25l", 14);
+    plat_term_write(TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN);
 }
 
 void plat_term_get_size(int *w, int *h) {
@@ -400,6 +400,19 @@ char *plat_which(const char *bin) {
     const char *pathext = getenv("PATHEXT");
     if (!pathext) pathext = ".COM;.EXE;.BAT;.CMD";
 
+    /* Pre-split PATHEXT once to avoid re-allocating per directory */
+    char *ext_dup = strdup(pathext);
+    const char *exts[32];
+    int next = 0;
+    {
+        char *save = NULL;
+        char *tok = strtok_r(ext_dup, ";", &save);
+        while (tok && next < 31) {
+            exts[next++] = tok;
+            tok = strtok_r(NULL, ";", &save);
+        }
+    }
+
     char *path_dup = strdup(path_env);
     char *save1 = NULL;
     char *dir = strtok_r(path_dup, ";", &save1);
@@ -410,26 +423,23 @@ char *plat_which(const char *bin) {
         /* Try exact name first */
         snprintf(full, sizeof(full), "%s\\%s", dir, bin);
         if (GetFileAttributesA(full) != INVALID_FILE_ATTRIBUTES) {
+            free(ext_dup);
             free(path_dup);
             return strdup(full);
         }
 
         /* Try with each PATHEXT extension */
-        char *ext_dup = strdup(pathext);
-        char *save2 = NULL;
-        char *ext = strtok_r(ext_dup, ";", &save2);
-        while (ext) {
-            snprintf(full, sizeof(full), "%s\\%s%s", dir, bin, ext);
+        for (int i = 0; i < next; i++) {
+            snprintf(full, sizeof(full), "%s\\%s%s", dir, bin, exts[i]);
             if (GetFileAttributesA(full) != INVALID_FILE_ATTRIBUTES) {
                 free(ext_dup);
                 free(path_dup);
                 return strdup(full);
             }
-            ext = strtok_r(NULL, ";", &save2);
         }
-        free(ext_dup);
         dir = strtok_r(NULL, ";", &save1);
     }
+    free(ext_dup);
     free(path_dup);
     return NULL;
 }

@@ -248,16 +248,7 @@ void scr_badge(Screen *s, int x, int y, const char *text, Color fg, Color bg, in
     scr_put(s, x, y, ' ', fg, bg, bold);
     int cx = x + 1;
     while (*text) {
-        const unsigned char *u = (const unsigned char *)text;
-        uint32_t cp;
-        int bytes;
-        if (u[0] < 0x80)       { cp = u[0]; bytes = 1; }
-        else if (u[0] < 0xE0)  { cp = u[0] & 0x1F; bytes = 2; }
-        else if (u[0] < 0xF0)  { cp = u[0] & 0x0F; bytes = 3; }
-        else                    { cp = u[0] & 0x07; bytes = 4; }
-        for (int i = 1; i < bytes && u[i]; i++)
-            cp = (cp << 6) | (u[i] & 0x3F);
-        text += bytes;
+        uint32_t cp = utf8_decode(&text);
         scr_put(s, cx++, y, cp, fg, bg, bold);
     }
     scr_put(s, cx, y, ' ', fg, bg, bold);

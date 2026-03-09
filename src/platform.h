@@ -52,6 +52,12 @@ int  plat_run_silent(const char **cmd, const char *cwd);
 /*   Kill a process by binary name. */
 void plat_kill_by_name(const char *bin);
 
+/* ── Terminal escape sequences ────────────────────────────────── */
+
+#define TERM_ALT_SCREEN_ON  "\033[?1049h\033[?25l"  /* alt screen + hide cursor */
+#define TERM_ALT_SCREEN_OFF "\033[?25h\033[?1049l"   /* show cursor + main screen */
+#define TERM_ALT_SCREEN_LEN 14
+
 /* ── Terminal ────────────────────────────────────────────────── */
 
 void plat_term_init(void);       /* raw mode + alt screen + hide cursor */

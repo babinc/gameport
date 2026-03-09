@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "install.h"
 #include "platform.h"
+#include "term.h"
 #include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,10 +136,6 @@ void child_cleanup(ChildProc *cp) {
 }
 
 /* ── Visible run ──────────────────────────────────────────────── */
-
-/* Declared in term.c */
-extern void term_restore(void);
-extern void term_reenter(void);
 
 int run_visible(const char **cmd, const char *cwd) {
     term_restore();

@@ -15,8 +15,8 @@
 #include <time.h>
 #include <errno.h>
 
-/* Suppress warn_unused_result for terminal escape writes */
-#define IGNORE_RESULT(x) do { if (x) {} } while(0)
+/* GCC's warn_unused_result ignores (void) casts; use a real sink */
+static inline void ignore_write(ssize_t r) { (void)r; }
 
 /* ── Terminal ────────────────────────────────────────────────── */
 
@@ -38,11 +38,11 @@ void plat_term_init(void) {
     tcgetattr(STDIN_FILENO, &orig_termios);
     set_raw_mode();
     raw_mode_on = 1;
-    IGNORE_RESULT(write(STDOUT_FILENO, "\033[?1049h\033[?25l", 14));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN));
 }
 
 void plat_term_cleanup(void) {
-    IGNORE_RESULT(write(STDOUT_FILENO, "\033[?25h\033[?1049l", 14));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN));
     if (raw_mode_on) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
         raw_mode_on = 0;
@@ -50,7 +50,7 @@ void plat_term_cleanup(void) {
 }
 
 void plat_term_suspend(void) {
-    IGNORE_RESULT(write(STDOUT_FILENO, "\033[?25h\033[?1049l", 14));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN));
     if (raw_mode_on) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
     }
@@ -58,7 +58,7 @@ void plat_term_suspend(void) {
 
 void plat_term_resume(void) {
     set_raw_mode();
-    IGNORE_RESULT(write(STDOUT_FILENO, "\033[?1049h\033[?25l", 14));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN));
 }
 
 void plat_term_get_size(int *w, int *h) {
@@ -84,7 +84,7 @@ int plat_term_read(char *buf, int bufsize) {
 
 void plat_term_write(const char *buf, size_t len) {
     if (len > 0) {
-        IGNORE_RESULT(write(STDOUT_FILENO, buf, len));
+        ignore_write(write(STDOUT_FILENO, buf, len));
     }
 }
 

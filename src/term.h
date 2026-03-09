@@ -42,6 +42,8 @@ typedef struct {
 void term_init(void);
 void term_cleanup(void);
 void term_get_size(int *w, int *h);
+void term_restore(void);   /* temporarily leave raw/alt for visible cmds */
+void term_reenter(void);   /* re-enter raw/alt after visible cmds */
 
 /* ── Screen buffer ────────────────────────────────────────────── */
 Screen *screen_create(int w, int h);
