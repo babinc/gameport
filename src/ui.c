@@ -350,7 +350,23 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
 
     /* Metadata */
     if (row < y + h - 1) { detail_row(s, ix, row, iw, "Type      ", g->category, CLR_YELLOW); row++; }
-    if (row < y + h - 1) { detail_row(s, ix, row, iw, "Keys      ", g->keys, (Color){220,180,100}); row++; }
+    if (row < y + h - 1 && g->keys && g->keys[0]) {
+        /* Show first key as preview */
+        char preview[128] = "";
+        for (int i = 0; g->keys[i] && i < 2; i++) {
+            const char *pipe = strchr(g->keys[i], '|');
+            if (pipe) {
+                if (i > 0) strncat(preview, ", ", sizeof(preview) - strlen(preview) - 1);
+                size_t klen = (size_t)(pipe - g->keys[i]);
+                if (strlen(preview) + klen < sizeof(preview) - 1) {
+                    strncat(preview, g->keys[i], klen);
+                }
+            }
+        }
+        strncat(preview, ", ...", sizeof(preview) - strlen(preview) - 1);
+        detail_row(s, ix, row, iw, "Keys      ", preview, (Color){220,180,100});
+        row++;
+    }
     row++;
 
     /* Separator between metadata and technicals */
@@ -556,6 +572,80 @@ static void render_log_view(Screen *s, App *app, int x, int y, int w, int h) {
     }
 }
 
+/* ── Controls view ────────────────────────────────────────────── */
+
+static void render_controls(Screen *s, App *app, int x, int y, int w, int h) {
+    scr_fill(s, x, y, w, h, CLR_BG);
+    scr_box(s, x, y, w, h, CLR_CYAN);
+    scr_box_title(s, x, y, w, "CONTROLS", CLR_CYAN, CLR_CYAN);
+
+    if (app->filter_count == 0) return;
+    int gi = app->filtered[app->selected];
+    const Game *g = &GAMES[gi];
+
+    int ix = x + 2;
+    int iw = w - 4;
+    int row = y + 2;
+
+    /* Game name */
+    scr_str_n(s, ix, row, g->name, iw, CLR_CYAN, CLR_BG, 1);
+    row += 2;
+
+    if (!g->keys || !g->keys[0]) {
+        scr_str_n(s, ix, row, "No controls listed.", iw, CLR_HINT, CLR_BG, 0);
+        return;
+    }
+
+    /* Column widths: find widest key */
+    int key_col = 0;
+    for (int i = 0; g->keys[i]; i++) {
+        const char *pipe = strchr(g->keys[i], '|');
+        if (pipe) {
+            int klen = (int)(pipe - g->keys[i]);
+            if (klen > key_col) key_col = klen;
+        }
+    }
+    key_col += 2; /* padding */
+    if (key_col > iw / 2) key_col = iw / 2;
+
+    /* Scroll support */
+    int num_keys = 0;
+    while (g->keys[num_keys]) num_keys++;
+
+    int inner_h = h - 6; /* minus border, title, game name, bottom */
+    if (inner_h < 1) inner_h = 1;
+    int max_scroll = num_keys - inner_h;
+    if (max_scroll < 0) max_scroll = 0;
+    if (app->panel_scroll > max_scroll) app->panel_scroll = max_scroll;
+
+    int start = app->panel_scroll;
+    for (int i = 0; i < inner_h && start + i < num_keys; i++) {
+        const char *entry = g->keys[start + i];
+        const char *pipe = strchr(entry, '|');
+        if (!pipe) {
+            scr_str_n(s, ix, row, entry, iw, CLR_DIMWHITE, CLR_BG, 0);
+        } else {
+            int klen = (int)(pipe - entry);
+            char keybuf[64];
+            int cpy = klen < (int)sizeof(keybuf) - 1 ? klen : (int)sizeof(keybuf) - 1;
+            memcpy(keybuf, entry, (size_t)cpy);
+            keybuf[cpy] = '\0';
+
+            scr_str_n(s, ix, row, keybuf, key_col, CLR_YELLOW, CLR_BG, 1);
+            scr_str_n(s, ix + key_col, row, pipe + 1, iw - key_col, CLR_DIMWHITE, CLR_BG, 0);
+        }
+        row++;
+    }
+
+    /* Scroll indicator */
+    if (max_scroll > 0) {
+        int indicator_row = y + h - 2;
+        char sbuf[32];
+        snprintf(sbuf, sizeof(sbuf), "[%d/%d]", start + 1, num_keys);
+        scr_str_n(s, ix, indicator_row, sbuf, iw, CLR_HINT, CLR_BG, 0);
+    }
+}
+
 /* ── Source selection overlay ─────────────────────────────────── */
 
 static void render_source_select(Screen *s, App *app, int x, int y, int w, int h) {
@@ -646,6 +736,12 @@ static void render_footer(Screen *s, App *app, int y) {
         cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
         cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
         cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+    } else if (app->mode == MODE_CONTROLS) {
+        cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
     } else if (app->mode == MODE_SOURCE_SELECT) {
         cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
         cx += scr_str_n(s, cx, ky, " select", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
@@ -670,6 +766,7 @@ static void render_footer(Screen *s, App *app, int y) {
             {"Enter", "play", CLR_GREEN},
             {"i", "install", CLR_YELLOW},
             {"d", "remove", CLR_RED},
+            {"c", "controls", (Color){220,180,100}},
             {NULL, NULL, CLR_NONE},
         };
         for (int ki = 0; keys[ki].key; ki++) {
@@ -721,6 +818,11 @@ void ui_draw(Screen *s, App *app) {
         int output_w = s->w - list_w;
         render_game_list(s, app, 0, header_h, list_w, main_h);
         render_output_panel(s, app, list_w, header_h, output_w, main_h);
+    } else if (app->mode == MODE_CONTROLS) {
+        /* Two-column: list + controls */
+        int detail_w = s->w - list_w;
+        render_game_list(s, app, 0, header_h, list_w, main_h);
+        render_controls(s, app, list_w, header_h, detail_w, main_h);
     } else if (app->mode == MODE_SOURCE_SELECT) {
         /* Two-column: list + source picker */
         int detail_w = s->w - list_w;

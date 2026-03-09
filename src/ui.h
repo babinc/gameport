@@ -14,6 +14,7 @@ typedef enum {
     MODE_VIEWLOG,
     MODE_SEARCH,
     MODE_SOURCE_SELECT,
+    MODE_CONTROLS,
 } AppMode;
 
 /* ── App state ────────────────────────────────────────────────── */

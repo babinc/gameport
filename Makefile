@@ -2,7 +2,8 @@ CC      = cc
 CFLAGS  = -std=c99 -Wall -Wextra -pedantic -O2
 LDFLAGS = -lm
 SRC     = src/main.c src/term.c src/ui.c src/catalog.c src/install.c src/util.c
-OBJ     = $(SRC:.c=.o)
+GAMESRC = $(wildcard src/games/*.c)
+OBJ     = $(SRC:.c=.o) $(GAMESRC:.c=.o)
 BIN     = gameport
 
 PREFIX ?= /usr/local
@@ -15,8 +16,11 @@ $(BIN): $(OBJ)
 src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+src/games/%.o: src/games/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 debug:
-	$(CC) -std=c99 -Wall -Wextra -pedantic -g -O0 -o $(BIN) $(SRC) $(LDFLAGS)
+	$(CC) -std=c99 -Wall -Wextra -pedantic -g -O0 -o $(BIN) $(SRC) $(GAMESRC) $(LDFLAGS)
 
 clean:
 	rm -f $(OBJ) $(BIN)

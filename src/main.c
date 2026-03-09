@@ -247,6 +247,7 @@ int main(void) {
     sa.sa_flags = 0;
     sigaction(SIGWINCH, &sa, NULL);
 
+    catalog_init();
     term_init();
 
     int w, h;
@@ -336,6 +337,27 @@ int main(void) {
                 if (key.ch == 'j') app.log_scroll++;
                 else if (key.ch == 'k' && app.log_scroll > 0) app.log_scroll--;
                 else if (key.ch == 'q' || key.ch == 'l') app.mode = MODE_NORMAL;
+                break;
+            default:
+                break;
+            }
+            break;
+
+        case MODE_CONTROLS:
+            switch (key.type) {
+            case KEY_ESC:
+                app.mode = MODE_NORMAL;
+                break;
+            case KEY_DOWN:
+                app.panel_scroll++;
+                break;
+            case KEY_UP:
+                if (app.panel_scroll > 0) app.panel_scroll--;
+                break;
+            case KEY_CHAR:
+                if (key.ch == 'j') app.panel_scroll++;
+                else if (key.ch == 'k' && app.panel_scroll > 0) app.panel_scroll--;
+                else if (key.ch == 'q' || key.ch == 'c') app.mode = MODE_NORMAL;
                 break;
             default:
                 break;
@@ -523,6 +545,11 @@ int main(void) {
                     app_refresh(&app);
                     app_rebuild_filter(&app);
                     app_set_message(&app, "Refreshed!", 1);
+                } else if (key.ch == 'c') {
+                    if (app.filter_count > 0) {
+                        app.mode = MODE_CONTROLS;
+                        app.panel_scroll = 0;
+                    }
                 } else if (key.ch == 'L') {
                     if (app.last_log) {
                         app.mode = MODE_VIEWLOG;

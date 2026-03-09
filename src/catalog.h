@@ -1,6 +1,8 @@
 #ifndef CATALOG_H
 #define CATALOG_H
 
+#include <stddef.h>   /* NULL */
+
 /* ── Install method enum ──────────────────────────────────────── */
 typedef enum { METHOD_CARGO, METHOD_GIT } MethodType;
 const char *method_str(MethodType m);
@@ -40,7 +42,7 @@ typedef struct {
     const char *name;
     const char *icon;
     const char *desc;
-    const char *keys;
+    const char **keys;          /* NULL-terminated "Key|Action" pairs */
     const char *category;
     const char *engine;
     const char *repo;
@@ -52,8 +54,9 @@ typedef struct {
 } Game;
 
 /* ── Catalog ──────────────────────────────────────────────────── */
-extern const Game GAMES[];
-extern const int  NUM_GAMES;
+extern Game GAMES[];
+extern int  NUM_GAMES;
+void catalog_init(void);
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 const char     *current_platform(void);
