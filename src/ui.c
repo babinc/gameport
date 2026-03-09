@@ -171,10 +171,11 @@ static void render_header(Screen *s, App *app) {
     /* Toolchain badges */
     struct { const char *name; int found; } tools[] = {
         {"python", app->toolchains.python},
+        {"make", app->toolchains.make},
         {"cmake", app->toolchains.cmake},
         {"cargo", app->toolchains.cargo},
     };
-    for (int t = 0; t < 3; t++) {
+    for (int t = 0; t < (int)(sizeof(tools)/sizeof(tools[0])); t++) {
         int tlen = (int)strlen(tools[t].name) + 2;
         rx -= tlen;
         Color fg = tools[t].found ? CLR_BLACK : CLR_DARKGRAY;
@@ -199,6 +200,7 @@ static Color category_color(const char *category) {
     if (strcmp(category, "Simulation") == 0) return (Color){80,160,200};
     if (strcmp(category, "Platformer") == 0) return (Color){100,200,100};
     if (strcmp(category, "Stealth") == 0)    return (Color){120,120,180};
+    if (strcmp(category, "Roguelike") == 0)  return (Color){180,200,80};
     return CLR_ICON;
 }
 

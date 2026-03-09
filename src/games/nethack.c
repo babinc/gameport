@@ -24,23 +24,38 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", NULL};
 
 static const char *build[] = {
     "bash", "-c",
     "set -e\n"
     "echo 'Fetching Lua...'\n"
     "make fetch-lua\n"
-    "echo 'Configuring NetHack...'\n"
-    "sed -i 's|^#PREFIX=.*|PREFIX='\"$(pwd)\"'/install|' sys/unix/hints/linux\n"
-    "sed -i 's|^PREFIX=.*|PREFIX='\"$(pwd)\"'/install|' sys/unix/hints/linux\n"
-    "sed -i 's|^HACKDIR=.*|HACKDIR='\"$(pwd)\"'/install/games/lib/nethackdir|' sys/unix/hints/linux\n"
-    "sed -i 's|^SHELLDIR=.*|SHELLDIR='\"$(pwd)\"'/install/games|' sys/unix/hints/linux\n"
-    "sed -i 's|^INSTDIR=.*|INSTDIR='\"$(pwd)\"'/install/games/lib/nethackdir|' sys/unix/hints/linux\n"
-    "sed -i 's|^VARDIR=.*|VARDIR='\"$(pwd)\"'/install/games/lib/nethackdir/var|' sys/unix/hints/linux\n"
-    "sys/unix/setup.sh sys/unix/hints/linux\n"
+    "echo 'Generating hints file...'\n"
+    "P=$(pwd)/install\n"
+    "H=$P/games/lib/nethackdir\n"
+    "cat > sys/unix/hints/gameport << HINTS\n"
+    "# GamePort-generated hints file\n"
+    "PREFIX=$P\n"
+    "HACKDIR=$H\n"
+    "SHELLDIR=$P/games\n"
+    "INSTDIR=$H\n"
+    "VARDIR=$H/var\n"
+    "POSTINSTALL=cp -n sys/unix/sysconf $H/sysconf\n"
+    "CC=gcc\n"
+    "CFLAGS=-g -O2 -I../include -DNOTPARMDECL\n"
+    "CFLAGS+=-DDLB\n"
+    "CFLAGS+=-DCOMPRESS=\\\"/bin/gzip\\\" -DCOMPRESS_EXTENSION=\\\".gz\\\"\n"
+    "CFLAGS+=-DSYSCF -DSYSCF_FILE=\\\"$H/sysconf\\\"\n"
+    "CFLAGS+=-DGCC_WARN -Wall -Wextra -Wno-missing-field-initializers\n"
+    "LINK=gcc\n"
+    "WINTTYLIB=-lncurses\n"
+    "WINSRC=\\$(WINTTYSRC)\n"
+    "WINOBJ=\\$(WINTTYOBJ)\n"
+    "WINLIB=\\$(WINTTYLIB)\n"
+    "HINTS\n"
+    "sys/unix/setup.sh sys/unix/hints/gameport\n"
     "echo 'Building NetHack...'\n"
-    "make -j$(nproc 2>/dev/null || echo 4)\n"
+    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)\n"
     "echo 'Installing locally...'\n"
     "make install",
     NULL
@@ -61,7 +76,7 @@ static const PlatformDeps deps[] = {
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (make, terminal)",
     .clone_url = "https://github.com/NetHack/NetHack.git",
-    .clone_dir = "nethack", .shallow = 0,
+    .clone_dir = "nethack", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "nethack",
 }};
@@ -71,7 +86,7 @@ static const Game game_data = {
     .desc = "The granddaddy of roguelikes. Descend into the Mazes of Menace, retrieve the Amulet of Yendor, and ascend. Incredibly deep gameplay with emergent interactions between hundreds of items and monsters.",
     .keys = keys, .category = "Roguelike",
     .engine = "ncurses", .repo = "https://github.com/NetHack/NetHack",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

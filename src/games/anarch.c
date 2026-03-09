@@ -19,7 +19,7 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", NULL};
+
 static const char *build[] = {"bash", "make.sh", "sdl", NULL};
 static const char *play[] = {"./anarch", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y", "libsdl2-dev", "g++", NULL};
@@ -45,7 +45,7 @@ static const Game game_data = {
     .desc = "Retro first-person shooter inspired by Doom. 10 levels, multiple weapons, all assets embedded in source code. Tiny, fast, zero external files needed.",
     .keys = keys, .category = "Action",
     .engine = "SDL2", .repo = "https://gitlab.com/drummyfish/anarch",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

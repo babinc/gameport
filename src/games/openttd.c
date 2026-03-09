@@ -17,7 +17,7 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", NULL};
+
 static const char *build[] = {
     "bash", "-c",
     "set -e\n"
@@ -56,7 +56,7 @@ static const Game game_data = {
     .desc = "Open-source Transport Tycoon Deluxe. Build rail, road, air, and sea networks to transport passengers and cargo. Compete against AI or friends. Free assets included.",
     .keys = keys, .category = "Simulation",
     .engine = "SDL2", .repo = "https://github.com/OpenTTD/OpenTTD",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

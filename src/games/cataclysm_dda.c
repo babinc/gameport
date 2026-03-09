@@ -18,7 +18,6 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", NULL};
 
 static const char *build[] = {
     "bash", "-c",
@@ -32,12 +31,9 @@ static const char *play[] = {"./cataclysm", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "libncurses5-dev", "libncursesw5-dev", "gettext", NULL};
 static const char *linux_check[] = {"dpkg", "-s", "libncursesw5-dev", NULL};
-static const char *mac_install[] = {"xcode-select", "--install", NULL};
-static const char *mac_check[] = {"xcode-select", "-p", NULL};
-
 static const PlatformDeps deps[] = {
     { "linux", "build-essential libncurses5-dev libncursesw5-dev", linux_install, linux_check, 1 },
-    { "macos", "Xcode CLI tools", mac_install, mac_check, 0 },
+    { "macos", "Xcode CLI tools", MAC_XCODE_INSTALL, MAC_XCODE_CHECK, 0 },
 };
 
 static const Source sources[] = {{
@@ -53,7 +49,7 @@ static const Game game_data = {
     .desc = "A turn-based survival roguelike set in a post-apocalyptic world. Craft, build, explore, and fight to survive against zombies, mutants, and the elements. Massive open world with deep simulation.",
     .keys = keys, .category = "Roguelike",
     .engine = "ncurses", .repo = "https://github.com/CleverRaven/Cataclysm-DDA",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

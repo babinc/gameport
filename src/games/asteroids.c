@@ -10,8 +10,6 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", "windows", NULL};
-static const char *posix_platforms[] = {"linux", "macos", NULL};
 static const char *win_platforms[] = {"windows", NULL};
 
 /* ── POSIX build (bash) ──────────────────────────────────────── */
@@ -67,13 +65,11 @@ static const char *win_play[] = {"build\\Release\\asteroids.exe", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libgl1-mesa-dev", NULL};
 static const char *linux_check[] = {"dpkg", "-s", "cmake", NULL};
-static const char *mac_install[] = {"xcode-select", "--install", NULL};
-static const char *mac_check[] = {"xcode-select", "-p", NULL};
 static const char *win_check[] = {"cmake", "--version", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "build-essential cmake libgl1-mesa-dev", linux_install, linux_check, 1 },
-    { "macos", "Xcode CLI tools", mac_install, mac_check, 0 },
+    { "macos", "Xcode CLI tools", MAC_XCODE_INSTALL, MAC_XCODE_CHECK, 0 },
     { "windows", "cmake + Visual Studio Build Tools", NULL, win_check, 0 },
 };
 
@@ -82,7 +78,7 @@ static const PlatformDeps deps[] = {
 static const Source sources[] = {
     {
         .method = ACQUIRE_GIT, .label = "Build from source (cmake + raylib)",
-        .platforms = posix_platforms,
+        .platforms = PLATFORMS_POSIX,
         .clone_url = "https://github.com/raysan5/raylib-games.git",
         .clone_dir = "asteroids", .shallow = 1,
         .build_cmd = build, .play_cmd = play,
@@ -103,7 +99,7 @@ static const Game game_data = {
     .desc = "Classic Asteroids in a graphical window. Pilot a ship, rotate and thrust to dodge, shoot to break asteroids into smaller pieces. Built with raylib -- pure C.",
     .keys = keys, .category = "Action",
     .engine = "raylib", .repo = "https://github.com/raysan5/raylib-games",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 3,
+    .platforms = PLATFORMS_ALL, .platform_deps = deps, .num_deps = 3,
     .sources = sources, .num_sources = 2,
 };
 

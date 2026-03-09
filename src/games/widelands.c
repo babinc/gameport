@@ -22,7 +22,6 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", NULL};
 
 static const char *build[] = {
     "bash", "-c",
@@ -66,7 +65,7 @@ static const Game game_data = {
     .desc = "Free open-source colony-building strategy game inspired by Settlers II. Grow settlements, manage resources, and conquer territory. All assets included.",
     .keys = keys, .category = "Strategy",
     .engine = "SDL2 (OpenGL)", .repo = "https://github.com/widelands/widelands",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

@@ -16,7 +16,6 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", NULL};
 
 static const char *build[] = {
     "bash", "-c",
@@ -51,7 +50,7 @@ static const Game game_data = {
     .desc = "A beautiful minimalist roguelike. Explore a 26-level dungeon with gorgeous ASCII art, clever puzzles, and deeply tactical combat. Community Edition of the classic.",
     .keys = keys, .category = "Roguelike",
     .engine = "SDL2", .repo = "https://github.com/tmewett/BrogueCE",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

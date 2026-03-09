@@ -59,6 +59,12 @@ extern Game GAMES[];
 extern int  NUM_GAMES;
 void catalog_init(void);
 
+/* ── Common platform arrays ──────────────────────────────────── */
+extern const char *PLATFORMS_POSIX[];       /* {"linux", "macos", NULL} */
+extern const char *PLATFORMS_ALL[];         /* {"linux", "macos", "windows", NULL} */
+extern const char *MAC_XCODE_INSTALL[];     /* {"xcode-select", "--install", NULL} */
+extern const char *MAC_XCODE_CHECK[];       /* {"xcode-select", "-p", NULL} */
+
 /* ── Helpers ──────────────────────────────────────────────────── */
 const char     *current_platform(void);
 int             game_supports_platform(const Game *g);

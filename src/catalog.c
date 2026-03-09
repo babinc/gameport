@@ -1,6 +1,13 @@
 #include "catalog.h"
 #include <string.h>
 
+/* ── Common platform arrays ──────────────────────────────────── */
+
+const char *PLATFORMS_POSIX[] = {"linux", "macos", NULL};
+const char *PLATFORMS_ALL[]   = {"linux", "macos", "windows", NULL};
+const char *MAC_XCODE_INSTALL[] = {"xcode-select", "--install", NULL};
+const char *MAC_XCODE_CHECK[]   = {"xcode-select", "-p", NULL};
+
 const char *acquire_str(AcquireMethod m) {
     switch (m) {
     case ACQUIRE_CARGO: return "cargo";

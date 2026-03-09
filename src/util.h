@@ -9,6 +9,7 @@ typedef struct {
     int cargo;
     int python;
     int cmake;
+    int make;
     int git;
 } Toolchains;
 

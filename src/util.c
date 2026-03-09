@@ -27,6 +27,7 @@ Toolchains toolchains_detect(void) {
     tc.cargo  = which("cargo");
     tc.python = which("python") || which("python3");
     tc.cmake  = which("cmake");
+    tc.make   = which("make");
     tc.git    = which("git");
     return tc;
 }

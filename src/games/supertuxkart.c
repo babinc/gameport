@@ -14,7 +14,6 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", "macos", NULL};
 
 static const char *build[] = {
     "bash", "-c",
@@ -66,7 +65,7 @@ static const Game game_data = {
     .desc = "Free open-source kart racer. Race as Tux and friends on 30+ tracks with powerups, nitro, and multiplayer. All assets included -- fully free.",
     .keys = keys, .category = "Racing",
     .engine = "custom (Irrlicht)", .repo = "https://github.com/supertuxkart/stk-code",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 
