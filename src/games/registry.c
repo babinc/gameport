@@ -25,6 +25,18 @@ const Game *game_wesnoth(void);
 const Game *game_endless_sky(void);
 const Game *game_dcss(void);
 const Game *game_supertux(void);
+const Game *game_flare(void);
+const Game *game_megaglest(void);
+const Game *game_zeroad(void);
+const Game *game_naev(void);
+const Game *game_pioneer(void);
+const Game *game_openra(void);
+const Game *game_pokerth(void);
+const Game *game_shattered_pd(void);
+const Game *game_cdogs(void);
+const Game *game_classicube(void);
+const Game *game_teeworlds(void);
+const Game *game_unciv(void);
 
 typedef const Game *(*GameFn)(void);
 
@@ -53,9 +65,21 @@ static const GameFn game_fns[] = {
     game_endless_sky,
     game_dcss,
     game_supertux,
+    game_flare,
+    game_megaglest,
+    game_zeroad,
+    game_naev,
+    game_pioneer,
+    game_openra,
+    game_pokerth,
+    game_shattered_pd,
+    game_cdogs,
+    game_classicube,
+    game_teeworlds,
+    game_unciv,
 };
 
-#define MAX_GAMES 32
+#define MAX_GAMES 64
 
 Game GAMES[MAX_GAMES];
 int NUM_GAMES;

@@ -148,15 +148,23 @@ static void start_download_acquire(App *app, const Source *src) {
 
     /* Build a bash script: mkdir, curl, extract */
     char script[4096];
-    if (src->archive_type && strcmp(src->archive_type, "tar.gz") == 0) {
+    const char *at = src->archive_type;
+    int is_tar = at && (strcmp(at, "tar.gz") == 0 ||
+                        strcmp(at, "tar.bz2") == 0 ||
+                        strcmp(at, "tar.xz") == 0);
+    if (is_tar) {
+        /* tar auto-detects compression with -a on GNU tar, but explicit is safer */
+        const char *flag = "z";  /* default: gzip */
+        if (strcmp(at, "tar.bz2") == 0) flag = "j";
+        else if (strcmp(at, "tar.xz") == 0) flag = "J";
         snprintf(script, sizeof(script),
             "set -e\n"
             "mkdir -p '%s'\n"
             "echo 'Downloading %s...'\n"
-            "curl -fSL '%s' | tar xz -C '%s' --strip-components=1\n"
+            "curl -fSL '%s' | tar x%s -C '%s' --strip-components=1\n"
             "echo 'Done!'",
-            game_path, src->clone_dir, src->clone_url, game_path);
-    } else if (src->archive_type && strcmp(src->archive_type, "zip") == 0) {
+            game_path, src->clone_dir, src->clone_url, flag, game_path);
+    } else if (at && strcmp(at, "zip") == 0) {
         snprintf(script, sizeof(script),
             "set -e\n"
             "mkdir -p '%s'\n"

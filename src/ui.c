@@ -11,7 +11,8 @@
 
 static const char *CATEGORIES[] = {
     "ALL", "Action", "Puzzle", "Strategy", "Shooter",
-    "Racing", "Simulation", "Platformer", "Stealth", "Roguelike", "Typing",
+    "Racing", "Simulation", "Platformer", "Stealth", "Roguelike",
+    "Typing", "RPG", "Card",
 };
 const int NUM_CATEGORIES = sizeof(CATEGORIES) / sizeof(CATEGORIES[0]);
 
@@ -223,6 +224,8 @@ static Color category_color(const char *category) {
     if (strcmp(category, "Stealth") == 0)    return (Color){120,120,180};
     if (strcmp(category, "Roguelike") == 0)  return (Color){180,200,80};
     if (strcmp(category, "Typing") == 0)    return (Color){100,180,220};
+    if (strcmp(category, "RPG") == 0)      return (Color){220,140,180};
+    if (strcmp(category, "Card") == 0)     return (Color){200,180,140};
     return CLR_ICON;
 }
 
