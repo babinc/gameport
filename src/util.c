@@ -25,7 +25,6 @@ int which(const char *bin) {
 Toolchains toolchains_detect(void) {
     Toolchains tc;
     tc.cargo  = which("cargo");
-    tc.python = which("python") || which("python3");
     tc.cmake  = which("cmake");
     tc.make   = which("make");
     tc.git    = which("git");

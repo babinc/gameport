@@ -192,7 +192,6 @@ static void render_header(Screen *s, App *app) {
     /* Toolchain badges */
     struct { const char *name; int found; } tools[] = {
         {"curl", app->toolchains.curl},
-        {"python", app->toolchains.python},
         {"make", app->toolchains.make},
         {"cmake", app->toolchains.cmake},
         {"cargo", app->toolchains.cargo},
