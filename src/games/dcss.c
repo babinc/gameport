@@ -18,14 +18,12 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *linux_platforms[] = {"linux", NULL};
-
 static const char *play[] = {"./dcss", NULL};
 
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (console, ~11 MB)",
-    .platforms = linux_platforms,
+    .platforms = PLATFORMS_LINUX,
     .clone_url = "https://github.com/crawl/crawl/releases/download/0.34.0/dcss-0.34.0-linux-console.x86_64.AppImage",
     .clone_dir = "dcss",
     .bin = "dcss",
@@ -37,7 +35,7 @@ static const Game game_data = {
     .desc = "One of the greatest traditional roguelikes. Descend through procedurally generated dungeons, choose from dozens of species and backgrounds, and face permadeath in deep tactical combat.",
     .keys = keys, .category = "Roguelike",
     .engine = "ncurses", .repo = "https://github.com/crawl/crawl",
-    .platforms = linux_platforms,
+    .platforms = PLATFORMS_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

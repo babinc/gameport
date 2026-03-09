@@ -70,6 +70,8 @@ typedef struct {
 
     /* Platform filter */
     int plat_filter;          /* 0 = all, 1 = linux, 2 = macos, 3 = windows */
+    int plat_total;           /* cached: games matching platform filter */
+    int plat_installed;       /* cached: installed games matching platform filter */
 } App;
 
 /* ── Filtered list encoding ──────────────────────────────────── */
@@ -88,6 +90,7 @@ void app_clear_message(App *app);
 void app_rebuild_filter(App *app);
 
 extern const int NUM_CATEGORIES;
+extern const int NUM_PLAT_FILTERS;
 
 /* ── Rendering ────────────────────────────────────────────────── */
 void ui_draw(Screen *s, App *app);

@@ -18,7 +18,7 @@ const int NUM_CATEGORIES = sizeof(CATEGORIES) / sizeof(CATEGORIES[0]);
 /* Platform filter options */
 static const char *PLAT_LABELS[] = {"All", "Linux", "macOS", "Windows"};
 static const char *PLAT_IDS[]    = {NULL,  "linux", "macos", "windows"};
-#define NUM_PLAT_FILTERS 4
+const int NUM_PLAT_FILTERS = sizeof(PLAT_LABELS) / sizeof(PLAT_LABELS[0]);
 
 static int game_matches_plat_filter(const Game *g, int plat_filter) {
     if (plat_filter == 0) return 1;  /* "All" */
@@ -45,10 +45,14 @@ static int search_matches(const char *name, const char *search, int search_len) 
 void app_rebuild_filter(App *app) {
     app->filter_count = 0;
 
-    /* Compute per-category counts (respecting platform filter) */
+    /* Compute per-category counts and header stats (respecting platform filter) */
     memset(app->cat_counts, 0, sizeof(app->cat_counts));
+    app->plat_total = 0;
+    app->plat_installed = 0;
     for (int i = 0; i < NUM_GAMES; i++) {
         if (!game_matches_plat_filter(&GAMES[i], app->plat_filter)) continue;
+        app->plat_total++;
+        if (app->installed[i]) app->plat_installed++;
         for (int c = 1; c < NUM_CATEGORIES; c++) {
             if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0) {
                 app->cat_counts[c]++;
@@ -176,15 +180,9 @@ static void render_header(Screen *s, App *app) {
     /* Right side: toolchain badges + game count */
     int rx = s->w - 1;
 
-    /* Game count badge (respects platform filter) */
-    int inst_count = 0, total_count = 0;
-    for (int i = 0; i < NUM_GAMES; i++) {
-        if (!game_matches_plat_filter(&GAMES[i], app->plat_filter)) continue;
-        total_count++;
-        if (app->installed[i]) inst_count++;
-    }
+    /* Game count badge (cached in app_rebuild_filter) */
     char countbuf[16];
-    snprintf(countbuf, sizeof(countbuf), "%d/%d", inst_count, total_count);
+    snprintf(countbuf, sizeof(countbuf), "%d/%d", app->plat_installed, app->plat_total);
     int clen = (int)strlen(countbuf) + 2; /* +2 for padding */
     rx -= clen;
     scr_badge(s, rx, 0, countbuf, CLR_BLACK, CLR_CYAN, 1);
@@ -249,32 +247,23 @@ static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
     /* Platform filter bar (row below box title) */
     int plat_row = y + 1;
     {
+        static const Color PLAT_COLORS[] = {
+            {0,200,200},    /* All = cyan */
+            {220,180,50},   /* Linux = gold */
+            {180,180,200},  /* macOS = silver */
+            {80,160,230},   /* Windows = blue */
+        };
         Color bar_bg = (Color){22,22,35};
         scr_fill(s, x + 1, plat_row, w - 2, 1, bar_bg);
         int px = x + 2;
         for (int p = 0; p < NUM_PLAT_FILTERS; p++) {
-            int is_active = (p == app->plat_filter);
-            Color fg, bg;
-            if (is_active) {
-                fg = CLR_BLACK;
-                /* Colored pill per platform */
-                if (p == 0)      bg = CLR_CYAN;                 /* All */
-                else if (p == 1) bg = (Color){220,180,50};      /* Linux */
-                else if (p == 2) bg = (Color){180,180,200};     /* macOS */
-                else             bg = (Color){80,160,230};      /* Windows */
-            } else {
-                fg = (Color){100,100,120};
-                bg = bar_bg;
-            }
-            if (is_active) {
-                /* Render as pill badge */
+            int active = (p == app->plat_filter);
+            Color fg = active ? CLR_BLACK : (Color){100,100,120};
+            Color bg = active ? PLAT_COLORS[p] : bar_bg;
+            px += scr_str_n(s, px, plat_row, " ", 1, fg, bg, 0);
+            px += scr_str_n(s, px, plat_row, PLAT_LABELS[p], w - (px - x) - 2, fg, bg, active);
+            if (active)
                 px += scr_str_n(s, px, plat_row, " ", 1, fg, bg, 0);
-                px += scr_str_n(s, px, plat_row, PLAT_LABELS[p], w - (px - x) - 2, fg, bg, 1);
-                px += scr_str_n(s, px, plat_row, " ", 1, fg, bg, 0);
-            } else {
-                px += scr_str_n(s, px, plat_row, " ", 1, fg, bar_bg, 0);
-                px += scr_str_n(s, px, plat_row, PLAT_LABELS[p], w - (px - x) - 2, fg, bar_bg, 0);
-            }
             px++; /* gap between options */
         }
     }

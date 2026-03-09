@@ -60,6 +60,19 @@ static void chain_clear(App *app) {
     free(app->next_cwd); app->next_cwd = NULL;
 }
 
+/* ── Source cwd helper ─────────────────────────────────────────── */
+
+/* Fill buf with the game directory for local-install sources; return buf or NULL */
+static const char *source_cwd(const Source *src, char *buf, size_t buflen) {
+    if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
+        char *gdir = games_dir();
+        snprintf(buf, buflen, "%s/%s", gdir, src->clone_dir);
+        free(gdir);
+        return buf;
+    }
+    return NULL;
+}
+
 /* ── Helpers to build & start install/uninstall ───────────────── */
 
 static void start_cargo_install(App *app, const Source *src) {
@@ -147,10 +160,11 @@ static void start_download_acquire(App *app, const Source *src) {
         snprintf(script, sizeof(script),
             "set -e\n"
             "mkdir -p '%s'\n"
+            "dl=$(mktemp /tmp/gp_dl.XXXXXX.zip)\n"
+            "trap 'rm -f \"$dl\"' EXIT\n"
             "echo 'Downloading %s...'\n"
-            "curl -fSL -o /tmp/_gp_dl.zip '%s'\n"
-            "unzip -o /tmp/_gp_dl.zip -d '%s'\n"
-            "rm -f /tmp/_gp_dl.zip\n"
+            "curl -fSL -o \"$dl\" '%s'\n"
+            "unzip -o \"$dl\" -d '%s'\n"
             "echo 'Done!'",
             game_path, src->clone_dir, src->clone_url, game_path);
     } else {
@@ -566,27 +580,21 @@ int main(void) {
                     int is_terminal = (strcmp(g->engine, "crossterm") == 0 ||
                                        strcmp(g->engine, "ratatui") == 0 ||
                                        strcmp(g->engine, "ncurses") == 0);
+                    /* Build command and cwd (shared by both paths) */
+                    const char *cmd[16];
+                    char cwd_buf[1024];
+                    const char *cwd = source_cwd(src, cwd_buf, sizeof(cwd_buf));
+                    int ci = 0;
+
+                    if (src->play_cmd && src->play_cmd[0]) {
+                        for (int i = 0; src->play_cmd[i] && ci < 15; i++)
+                            cmd[ci++] = src->play_cmd[i];
+                    } else {
+                        cmd[ci++] = src->bin;
+                    }
+                    cmd[ci] = NULL;
+
                     if (is_terminal) {
-                        const char *cmd[8];
-                        const char *cwd = NULL;
-                        char cwd_buf[1024];
-                        int ci = 0;
-
-                        if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
-                            char *gdir = games_dir();
-                            snprintf(cwd_buf, sizeof(cwd_buf), "%s/%s", gdir, src->clone_dir);
-                            free(gdir);
-                            cwd = cwd_buf;
-                        }
-
-                        if (src->play_cmd && src->play_cmd[0]) {
-                            for (int i = 0; src->play_cmd[i] && ci < 7; i++)
-                                cmd[ci++] = src->play_cmd[i];
-                        } else {
-                            cmd[ci++] = src->bin;
-                        }
-                        cmd[ci] = NULL;
-
                         /* Need full redraw after */
                         screen_resize(scr, w, h);
                         int ok = run_visible(cmd, cwd);
@@ -601,28 +609,6 @@ int main(void) {
                         }
                     } else {
                         /* Graphical / captured games */
-                        const char *cmd[16];
-                        const char *cwd = NULL;
-                        char cwd_buf[1024];
-                        int ci = 0;
-
-                        if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
-                            char *gdir = games_dir();
-                            snprintf(cwd_buf, sizeof(cwd_buf), "%s/%s", gdir, src->clone_dir);
-                            free(gdir);
-                            cwd = cwd_buf;
-                            if (src->play_cmd) {
-                                for (int i = 0; src->play_cmd[i] && ci < 15; i++)
-                                    cmd[ci++] = src->play_cmd[i];
-                            }
-                        } else if (src->play_cmd && src->play_cmd[0]) {
-                            for (int i = 0; src->play_cmd[i] && ci < 15; i++)
-                                cmd[ci++] = src->play_cmd[i];
-                        } else {
-                            cmd[ci++] = src->bin;
-                        }
-                        cmd[ci] = NULL;
-
                         child_start(&app.child, cmd, cwd);
                         app.mode = MODE_RUNNING;
                         app.panel_label = "RUNNING";
@@ -661,7 +647,7 @@ int main(void) {
                     app_rebuild_filter(&app);
                     app_set_message(&app, "Refreshed!", 1);
                 } else if (key.ch == 'p') {
-                    app.plat_filter = (app.plat_filter + 1) % 4;
+                    app.plat_filter = (app.plat_filter + 1) % NUM_PLAT_FILTERS;
                     app.selected = 0;
                     app_rebuild_filter(&app);
                 } else if (key.ch == 'c') {
