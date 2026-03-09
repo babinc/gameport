@@ -528,23 +528,37 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     if (g->repo && row < y + h - 1) { detail_row(s, ix, row, iw, "Repo      ", g->repo, (Color){100,180,255}); row++; }
 
     const Source *src = default_source(g);
+
+    /* Acquire step */
     if (src && row < y + h - 1) {
-        detail_row(s, ix, row, iw, "Method    ", src->label, (Color){180,140,220}); row++;
-        if (src->bin[0] && row < y + h - 1) {
-            detail_row(s, ix, row, iw, "Bin       ", src->bin, CLR_GREEN); row++;
+        const char *acq;
+        switch (src->method) {
+        case ACQUIRE_CARGO:    acq = "cargo install"; break;
+        case ACQUIRE_GIT:      acq = "git clone"; break;
+        case ACQUIRE_DOWNLOAD: acq = src->archive_type ? src->archive_type : "binary"; break;
+        default:               acq = "unknown"; break;
         }
+        int avail = has_runtime(&app->toolchains, src->method);
+        int cx = ix;
+        cx += scr_str_n(s, cx, row, "Acquire   ", iw, CLR_LABEL, CLR_BG, 0);
+        cx += scr_str_n(s, cx, row, acq, iw - (cx - ix),
+                         avail ? (Color){180,140,220} : CLR_RED, CLR_BG, 0);
+        if (!avail) {
+            const char *tool = acquire_str(src->method);
+            char miss[64];
+            snprintf(miss, sizeof(miss), " (%s missing!)", tool);
+            scr_str_n(s, cx, row, miss, iw - (cx - ix), CLR_RED, CLR_BG, 0);
+        }
+        row++;
     }
 
-    /* Runtime status */
+    /* Build step */
     if (src && row < y + h - 1) {
-        int avail = has_runtime(&app->toolchains, src->method);
-        const char *mstr = acquire_str(src->method);
-        int cx = ix;
-        cx += scr_str_n(s, cx, row, "Runtime   ", iw, CLR_LABEL, CLR_BG, 0);
-        cx += scr_str_n(s, cx, row, mstr, iw - (cx - ix),
-                         avail ? CLR_GREEN : CLR_RED, CLR_BG, 0);
-        scr_str_n(s, cx, row, avail ? " (found)" : " (missing!)", iw - (cx - ix),
-                  avail ? CLR_DARKGRAY : CLR_RED, CLR_BG, 0);
+        const char *bld = "none (pre-built)";
+        if (src->build_cmd && src->build_cmd[0])
+            bld = "yes (from source)";
+        detail_row(s, ix, row, iw, "Build     ", bld,
+                   (src->build_cmd && src->build_cmd[0]) ? CLR_YELLOW : CLR_GREEN);
         row++;
     }
 
