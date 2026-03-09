@@ -10,12 +10,6 @@
 #include <windows.h>
 #include <tlhelp32.h>   /* CreateToolhelp32Snapshot */
 
-/* MSVC compat */
-#ifdef _MSC_VER
-#define strdup  _strdup
-#define strtok_r strtok_s
-#endif
-
 /* ── Helpers ─────────────────────────────────────────────────── */
 
 /* Build a flat command-line string from NULL-terminated argv.

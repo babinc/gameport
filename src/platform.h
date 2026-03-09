@@ -3,6 +3,12 @@
 
 #include <stddef.h>
 
+/* ── MSVC compatibility ──────────────────────────────────────── */
+#ifdef _MSC_VER
+#define strdup  _strdup
+#define strtok_r strtok_s
+#endif
+
 /* ── Platform process handle ─────────────────────────────────── */
 
 #ifdef _WIN32
