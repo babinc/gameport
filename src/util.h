@@ -13,8 +13,8 @@ typedef struct {
 } Toolchains;
 
 Toolchains toolchains_detect(void);
-int        has_runtime(const Toolchains *tc, MethodType method);
-const char *runtime_install_hint(MethodType method);
+int        has_runtime(const Toolchains *tc, AcquireMethod method);
+const char *runtime_install_hint(AcquireMethod method);
 
 /* ── Path helpers ─────────────────────────────────────────────── */
 int   which(const char *bin);                /* returns 1 if found on PATH */
@@ -32,9 +32,6 @@ void  clear_install_method(const char *game_name);
 
 /* ── Name sanitization ────────────────────────────────────────── */
 void  sanitize_name(const char *in, char *out, size_t outlen);
-
-/* ── Shell helpers ────────────────────────────────────────────── */
-void  shell_quote(char *out, size_t outlen, const char *in);
 
 /* ── Size formatting ──────────────────────────────────────────── */
 void  format_size(unsigned long bytes, char *buf, int buflen);

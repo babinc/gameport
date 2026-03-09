@@ -29,7 +29,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./build/openttd", NULL};
-static const char *uninstall[] = {"git-game-remove", "OpenTTD", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libsdl2-dev", "libfreetype-dev",
     "libfontconfig1-dev", "libicu-dev", "libharfbuzz-dev",
@@ -45,11 +44,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
     .clone_url = "https://github.com/OpenTTD/OpenTTD.git",
     .clone_dir = "OpenTTD",
     .build_cmd = build, .play_cmd = play,
-    .bin = "OpenTTD", .uninstall_cmd = uninstall,
+    .bin = "OpenTTD",
 }};
 
 static const Game game_data = {

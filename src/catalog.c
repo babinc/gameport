@@ -1,10 +1,10 @@
 #include "catalog.h"
 #include <string.h>
 
-const char *method_str(MethodType m) {
+const char *acquire_str(AcquireMethod m) {
     switch (m) {
-    case METHOD_CARGO: return "cargo";
-    case METHOD_GIT:   return "git";
+    case ACQUIRE_CARGO: return "cargo";
+    case ACQUIRE_GIT:   return "git";
     }
     return "unknown";
 }

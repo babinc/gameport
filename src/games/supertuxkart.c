@@ -33,7 +33,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./cmake_build/bin/supertuxkart", NULL};
-static const char *uninstall[] = {"git-game-remove", "stk-code", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "subversion",
@@ -55,11 +54,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
     .clone_url = "https://github.com/supertuxkart/stk-code.git",
     .clone_dir = "stk-code",
     .build_cmd = build, .play_cmd = play,
-    .bin = "supertuxkart", .uninstall_cmd = uninstall,
+    .bin = "supertuxkart",
 }};
 
 static const Game game_data = {

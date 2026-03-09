@@ -42,7 +42,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./build/src/warzone2100", NULL};
-static const char *uninstall[] = {"git-game-remove", "warzone2100", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "ninja-build", "pkg-config", "gettext",
@@ -65,11 +64,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
     .clone_url = "https://github.com/Warzone2100/warzone2100.git",
     .clone_dir = "warzone2100", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "warzone2100", .uninstall_cmd = uninstall,
+    .bin = "warzone2100",
 }};
 
 static const Game game_data = {

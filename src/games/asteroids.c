@@ -32,7 +32,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./build/asteroids", NULL};
-static const char *uninstall[] = {"git-game-remove", "asteroids", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libgl1-mesa-dev", NULL};
 static const char *linux_check[] = {"dpkg", "-s", "cmake", NULL};
@@ -45,11 +44,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (cmake + raylib)",
+    .method = ACQUIRE_GIT, .label = "Build from source (cmake + raylib)",
     .clone_url = "https://github.com/raysan5/raylib-games.git",
     .clone_dir = "asteroids", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "asteroids", .uninstall_cmd = uninstall,
+    .bin = "asteroids",
 }};
 
 static const Game game_data = {

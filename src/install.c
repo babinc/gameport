@@ -1,4 +1,6 @@
+#ifndef _WIN32
 #define _POSIX_C_SOURCE 200809L
+#endif
 #include "install.h"
 #include "platform.h"
 #include "term.h"
@@ -142,48 +144,6 @@ int run_visible(const char **cmd, const char *cwd) {
     int ok = plat_run_inherit(cmd, cwd);
     term_reenter();
     return ok;
-}
-
-/* ── Build commands ───────────────────────────────────────────── */
-
-char **build_install_cmd(const Source *src) {
-    if (src->method == METHOD_CARGO) {
-        char **cmd = malloc(4 * sizeof(char *));
-        cmd[0] = strdup("cargo");
-        cmd[1] = strdup("install");
-        cmd[2] = strdup(src->bin);
-        cmd[3] = NULL;
-        return cmd;
-    }
-    if (src->method == METHOD_GIT) {
-        /* git-game <dir> <url> --shallow/--full [build_cmd...] */
-        int cap = 16;
-        char **cmd = malloc((size_t)cap * sizeof(char *));
-        int n = 0;
-        cmd[n++] = strdup("git-game");
-        cmd[n++] = strdup(src->clone_dir);
-        cmd[n++] = strdup(src->clone_url);
-        cmd[n++] = strdup(src->shallow ? "--shallow" : "--full");
-        if (src->build_cmd) {
-            for (int i = 0; src->build_cmd[i]; i++) {
-                if (n >= cap - 1) { cap *= 2; cmd = realloc(cmd, (size_t)cap * sizeof(char *)); }
-                cmd[n++] = strdup(src->build_cmd[i]);
-            }
-        }
-        cmd[n] = NULL;
-        return cmd;
-    }
-    return NULL;
-}
-
-char **build_uninstall_cmd(const Source *src) {
-    if (!src->uninstall_cmd || !src->uninstall_cmd[0]) return NULL;
-    int n = 0;
-    while (src->uninstall_cmd[n]) n++;
-    char **cmd = malloc((size_t)(n + 1) * sizeof(char *));
-    for (int i = 0; i < n; i++) cmd[i] = strdup(src->uninstall_cmd[i]);
-    cmd[n] = NULL;
-    return cmd;
 }
 
 void free_cmd(char **cmd) {

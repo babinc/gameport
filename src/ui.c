@@ -479,7 +479,7 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     /* Runtime status */
     if (src && row < y + h - 1) {
         int avail = has_runtime(&app->toolchains, src->method);
-        const char *mstr = method_str(src->method);
+        const char *mstr = acquire_str(src->method);
         int cx = ix;
         cx += scr_str_n(s, cx, row, "Runtime   ", iw, CLR_LABEL, CLR_BG, 0);
         cx += scr_str_n(s, cx, row, mstr, iw - (cx - ix),
@@ -774,12 +774,12 @@ static void render_source_select(Screen *s, App *app, int x, int y, int w, int h
         cx += scr_str_n(s, cx, row, src->label, iw - (cx - ix), CLR_WHITE, bg, 0);
 
         /* Method badge */
-        const char *mstr = method_str(src->method);
+        const char *mstr = acquire_str(src->method);
         int badge_w = (int)strlen(mstr) + 2;
         if (cx + badge_w + 2 < ix + iw) {
             cx += scr_str_n(s, cx, row, "  ", 2, CLR_BG, bg, 0);
             scr_badge(s, cx, row, mstr, CLR_BLACK,
-                      src->method == METHOD_CARGO ? CLR_CYAN : CLR_GREEN, 0);
+                      src->method == ACQUIRE_CARGO ? CLR_CYAN : CLR_GREEN, 0);
         }
 
         /* Selection arrow */

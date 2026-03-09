@@ -40,17 +40,11 @@ void child_kill(ChildProc *cp);
 /* Clean up child resources. */
 void child_cleanup(ChildProc *cp);
 
-/* ── High-level install commands ──────────────────────────────── */
+/* ── High-level helpers ───────────────────────────────────────── */
 
 /* Run a command visibly (restore terminal, run, re-enter TUI).
    Returns exit success (1) or failure (0). */
 int  run_visible(const char **cmd, const char *cwd);
-
-/* Build install command for a source. Returns malloc'd NULL-terminated array. */
-char **build_install_cmd(const Source *src);
-
-/* Build uninstall command. Returns malloc'd NULL-terminated array. */
-char **build_uninstall_cmd(const Source *src);
 
 /* Free a malloc'd command array. */
 void free_cmd(char **cmd);

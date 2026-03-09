@@ -22,7 +22,6 @@ static const char *keys[] = {
 static const char *platforms[] = {"linux", "macos", NULL};
 static const char *build[] = {"bash", "make.sh", "sdl", NULL};
 static const char *play[] = {"./anarch", NULL};
-static const char *uninstall[] = {"git-game-remove", "anarch", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y", "libsdl2-dev", "g++", NULL};
 static const char *linux_check[] = {"dpkg", "-s", "libsdl2-dev", NULL};
 static const char *mac_install[] = {"brew", "install", "sdl2", NULL};
@@ -34,11 +33,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + gcc)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + gcc)",
     .clone_url = "https://gitlab.com/drummyfish/anarch.git",
     .clone_dir = "anarch", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "anarch", .uninstall_cmd = uninstall,
+    .bin = "anarch",
 }};
 
 static const Game game_data = {

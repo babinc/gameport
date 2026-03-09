@@ -44,7 +44,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./bin/lsdl2srb2", NULL};
-static const char *uninstall[] = {"git-game-remove", "SRB2", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "libsdl2-dev", "libsdl2-mixer-dev",
@@ -58,11 +57,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + make)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + make)",
     .clone_url = "https://github.com/STJr/SRB2.git",
     .clone_dir = "SRB2", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "lsdl2srb2", .uninstall_cmd = uninstall,
+    .bin = "lsdl2srb2",
 }};
 
 static const Game game_data = {

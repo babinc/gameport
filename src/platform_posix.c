@@ -12,6 +12,7 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <dirent.h>
 #include <time.h>
 #include <errno.h>
 
@@ -253,6 +254,30 @@ void plat_mkdir_p(const char *path) {
         }
     }
     mkdir(tmp, 0755);
+}
+
+static int rmdir_rf_impl(const char *path) {
+    DIR *d = opendir(path);
+    if (!d) return remove(path) == 0;
+    struct dirent *ent;
+    int ok = 1;
+    while ((ent = readdir(d)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+            continue;
+        char child[1024];
+        snprintf(child, sizeof(child), "%s/%s", path, ent->d_name);
+        struct stat st;
+        if (stat(child, &st) == 0 && S_ISDIR(st.st_mode))
+            ok = rmdir_rf_impl(child) && ok;
+        else
+            ok = (remove(child) == 0) && ok;
+    }
+    closedir(d);
+    return (rmdir(path) == 0) && ok;
+}
+
+int plat_rmdir_rf(const char *path) {
+    return rmdir_rf_impl(path);
 }
 
 char *plat_which(const char *bin) {

@@ -24,6 +24,42 @@ static void sigwinch_handler(int sig) {
 }
 #endif
 
+/* ── Command chain helpers ────────────────────────────────────── */
+
+/* Duplicate a NULL-terminated command array (caller must free_cmd) */
+static char **dup_cmd(const char **cmd) {
+    int n = 0;
+    while (cmd[n]) n++;
+    char **out = malloc((size_t)(n + 1) * sizeof(char *));
+    for (int i = 0; i < n; i++) out[i] = strdup(cmd[i]);
+    out[n] = NULL;
+    return out;
+}
+
+/* Set the next command to run after current child exits OK */
+static void chain_next(App *app, const char **cmd, const char *cwd) {
+    app->next_cmd = dup_cmd(cmd);
+    app->next_cwd = cwd ? strdup(cwd) : NULL;
+}
+
+/* Start the next chained command (if any). Returns 1 if started. */
+static int chain_advance(App *app) {
+    if (!app->next_cmd) return 0;
+    char **cmd = app->next_cmd;
+    char *cwd = app->next_cwd;
+    app->next_cmd = NULL;
+    app->next_cwd = NULL;
+    child_start(&app->child, (const char **)cmd, cwd);
+    free_cmd(cmd);
+    free(cwd);
+    return 1;
+}
+
+static void chain_clear(App *app) {
+    if (app->next_cmd) { free_cmd(app->next_cmd); app->next_cmd = NULL; }
+    free(app->next_cwd); app->next_cwd = NULL;
+}
+
 /* ── Helpers to build & start install/uninstall ───────────────── */
 
 static void start_cargo_install(App *app, const Source *src) {
@@ -36,51 +72,33 @@ static void start_cargo_uninstall(App *app, const Source *src) {
     child_start(&app->child, src->uninstall_cmd, NULL);
 }
 
-static void start_git_install(App *app, const Source *src) {
+static void start_git_acquire(App *app, const Source *src) {
     char *gdir = games_dir();
-    char q_gdir[2048];
-    shell_quote(q_gdir, sizeof(q_gdir), gdir);
+    char game_path[1024], git_path[1030];
+    snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->clone_dir);
+    snprintf(git_path, sizeof(git_path), "%s/.git", game_path);
 
-    /* Build a shell script for git clone + build */
-    char script[4096];
-    /* Build the build command string */
-    char build_str[1024] = "";
-    if (src->build_cmd) {
-        for (int i = 0; src->build_cmd[i]; i++) {
-            if (i > 0) strncat(build_str, " ", sizeof(build_str) - strlen(build_str) - 1);
-            strncat(build_str, src->build_cmd[i], sizeof(build_str) - strlen(build_str) - 1);
-        }
+    /* Chain the build command (runs after acquire finishes) */
+    if (src->build_cmd && src->build_cmd[0]) {
+        chain_next(app, src->build_cmd, game_path);
     }
 
-    snprintf(script, sizeof(script),
-        "set -e\n"
-        "GAMES_DIR=%s\n"
-        "NAME='%s'\n"
-        "REPO='%s'\n"
-        "GAME_DIR=\"$GAMES_DIR/$NAME\"\n"
-        "\n"
-        "if [ -d \"$GAME_DIR/.git\" ]; then\n"
-        "  echo \"$NAME already cloned, pulling latest...\"\n"
-        "  cd \"$GAME_DIR\"\n"
-        "  git pull || echo 'git pull failed, continuing...'\n"
-        "else\n"
-        "  echo \"Cloning $REPO...\"\n"
-        "  git clone %s \"$REPO\" \"$GAME_DIR\"\n"
-        "fi\n"
-        "\n"
-        "cd \"$GAME_DIR\"\n"
-        "%s%s%s\n"
-        "\n"
-        "echo 'Game ready!'\n",
-        q_gdir, src->clone_dir, src->clone_url,
-        src->shallow ? "--depth 1" : "",
-        build_str[0] ? "echo 'Building...'\n" : "",
-        build_str,
-        build_str[0] ? "\n" : "");
+    if (plat_file_exists(git_path)) {
+        /* Already cloned — pull latest */
+        const char *cmd[] = {"git", "pull", NULL};
+        child_start(&app->child, cmd, game_path);
+    } else {
+        /* Fresh clone */
+        if (src->shallow) {
+            const char *cmd[] = {"git", "clone", "--depth", "1",
+                                 src->clone_url, game_path, NULL};
+            child_start(&app->child, cmd, NULL);
+        } else {
+            const char *cmd[] = {"git", "clone", src->clone_url, game_path, NULL};
+            child_start(&app->child, cmd, NULL);
+        }
+    }
     free(gdir);
-
-    const char *cmd[] = {"bash", "-c", script, NULL};
-    child_start(&app->child, cmd, NULL);
 }
 
 static void start_git_remove(App *app, const Source *src) {
@@ -89,21 +107,28 @@ static void start_git_remove(App *app, const Source *src) {
     snprintf(path, sizeof(path), "%s/%s", gdir, src->clone_dir);
     free(gdir);
 
-    char q_path[2048];
-    shell_quote(q_path, sizeof(q_path), path);
-    char script[4096];
-    snprintf(script, sizeof(script), "echo 'Removing %s...' && rm -rf %s && echo 'Removed!'",
-             src->clone_dir, q_path);
-    const char *cmd[] = {"bash", "-c", script, NULL};
-    child_start(&app->child, cmd, NULL);
+    /* Remove synchronously (directory delete is fast) */
+    linebuf_init(&app->child.output);
+    char msg[1024];
+    snprintf(msg, sizeof(msg), "Removing %s...", src->clone_dir);
+    linebuf_push(&app->child.output, msg);
+
+    if (plat_rmdir_rf(path)) {
+        linebuf_push(&app->child.output, "Removed!");
+        app->child.ok = 1;
+    } else {
+        linebuf_push(&app->child.output, "Error: failed to remove directory");
+        app->child.ok = 0;
+    }
+    app->child.done = 1;
 }
 
 /* ── Start install/uninstall with a chosen source ────────────── */
 
 static void begin_install(App *app, const Source *src) {
     switch (src->method) {
-    case METHOD_CARGO: start_cargo_install(app, src); break;
-    case METHOD_GIT:   start_git_install(app, src); break;
+    case ACQUIRE_CARGO: start_cargo_install(app, src); break;
+    case ACQUIRE_GIT:   start_git_acquire(app, src); break;
     }
     app->panel_label = "INSTALLING";
     app->mode = MODE_INSTALLING;
@@ -114,8 +139,8 @@ static void begin_install(App *app, const Source *src) {
 static void begin_uninstall(App *app, const Source *src) {
     kill_game_process(src->bin);
     switch (src->method) {
-    case METHOD_CARGO: start_cargo_uninstall(app, src); break;
-    case METHOD_GIT:   start_git_remove(app, src); break;
+    case ACQUIRE_CARGO: start_cargo_uninstall(app, src); break;
+    case ACQUIRE_GIT:   start_git_remove(app, src); break;
     }
     app->panel_label = "REMOVING";
     app->mode = MODE_INSTALLING;
@@ -159,7 +184,7 @@ static int try_install_source(App *app, Screen *scr, int *w, int *h) {
     if (!has_runtime(&app->toolchains, src->method)) {
         char msg[256];
         snprintf(msg, sizeof(msg), "Missing %s! %s",
-                 method_str(src->method), runtime_install_hint(src->method));
+                 acquire_str(src->method), runtime_install_hint(src->method));
         app_set_message(app, msg, 0);
         app->mode = MODE_NORMAL;
         return 0;
@@ -185,6 +210,7 @@ static int try_install_source(App *app, Screen *scr, int *w, int *h) {
 }
 
 static void close_panel(App *app) {
+    chain_clear(app);
     int ok = app->child.ok;
     const Game *g = &GAMES[app->active_game];
 
@@ -285,6 +311,11 @@ int main(void) {
         /* Poll child process for output */
         if ((app.mode == MODE_INSTALLING || app.mode == MODE_RUNNING) && !app.child.done) {
             child_poll(&app.child);
+            /* If child finished OK and there's a chained command, start it */
+            if (app.child.done && app.child.ok && app.next_cmd) {
+                plat_proc_close(&app.child.proc);
+                chain_advance(&app);
+            }
         }
 
         /* Draw */
@@ -316,6 +347,7 @@ int main(void) {
                 if (app.child.done) {
                     close_panel(&app);
                 } else if (key.type == KEY_ESC && app.mode == MODE_RUNNING) {
+                    chain_clear(&app);
                     child_kill(&app.child);
                     child_cleanup(&app.child);
                     app_refresh(&app);
@@ -513,7 +545,7 @@ int main(void) {
                         char cwd_buf[1024];
                         int ci = 0;
 
-                        if (src->method == METHOD_GIT) {
+                        if (src->method == ACQUIRE_GIT) {
                             char *gdir = games_dir();
                             snprintf(cwd_buf, sizeof(cwd_buf), "%s/%s", gdir, src->clone_dir);
                             free(gdir);
@@ -635,6 +667,7 @@ int main(void) {
         }
     }
 
+    chain_clear(&app);
     app_cleanup(&app);
     screen_destroy(scr);
     term_cleanup();

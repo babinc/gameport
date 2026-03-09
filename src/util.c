@@ -1,4 +1,6 @@
+#ifndef _WIN32
 #define _POSIX_C_SOURCE 200809L
+#endif
 #include "util.h"
 #include "platform.h"
 #include <stdio.h>
@@ -29,18 +31,18 @@ Toolchains toolchains_detect(void) {
     return tc;
 }
 
-int has_runtime(const Toolchains *tc, MethodType method) {
+int has_runtime(const Toolchains *tc, AcquireMethod method) {
     switch (method) {
-    case METHOD_CARGO: return tc->cargo;
-    case METHOD_GIT:   return tc->git;
+    case ACQUIRE_CARGO: return tc->cargo;
+    case ACQUIRE_GIT:   return tc->git;
     }
     return 1;
 }
 
-const char *runtime_install_hint(MethodType method) {
+const char *runtime_install_hint(AcquireMethod method) {
     switch (method) {
-    case METHOD_CARGO: return "Install Rust: https://rustup.rs";
-    case METHOD_GIT:   return "Install Git: https://git-scm.com";
+    case ACQUIRE_CARGO: return "Install Rust: https://rustup.rs";
+    case ACQUIRE_GIT:   return "Install Git: https://git-scm.com";
     }
     return "Unknown runtime";
 }
@@ -83,7 +85,7 @@ int deps_check_satisfied(const PlatformDeps *deps) {
 
 int is_git_cloned_not_ready(const Game *g) {
     const Source *src = default_source(g);
-    if (!src || src->method != METHOD_GIT) return 0;
+    if (!src || src->method != ACQUIRE_GIT) return 0;
     if (!src->play_cmd || !src->play_cmd[0]) return 0;
     char *gdir = games_dir();
     char git_path[1024], bin_path[1024];
@@ -97,7 +99,7 @@ int is_installed(const Game *g) {
     const Source *src = default_source(g);
     if (!src) return 0;
 
-    if (src->method == METHOD_GIT) {
+    if (src->method == ACQUIRE_GIT) {
         if (!src->play_cmd || !src->play_cmd[0]) return 0;
         char *gdir = games_dir();
         char path[1024];
@@ -160,25 +162,6 @@ void sanitize_name(const char *in, char *out, size_t outlen) {
         if (*p == ' ') *p = '_';
         *p = (char)tolower((unsigned char)*p);
     }
-}
-
-/* ── Shell helpers ────────────────────────────────────────────── */
-
-void shell_quote(char *out, size_t outlen, const char *in) {
-    size_t j = 0;
-    if (j < outlen - 1) out[j++] = '\'';
-    for (size_t i = 0; in[i] && j < outlen - 5; i++) {
-        if (in[i] == '\'') {
-            out[j++] = '\'';
-            out[j++] = '\\';
-            out[j++] = '\'';
-            out[j++] = '\'';
-        } else {
-            out[j++] = in[i];
-        }
-    }
-    if (j < outlen - 1) out[j++] = '\'';
-    out[j] = '\0';
 }
 
 /* ── Size formatting ──────────────────────────────────────────── */

@@ -35,7 +35,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./build/src/widelands", NULL};
-static const char *uninstall[] = {"git-game-remove", "widelands", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "g++", "libglew-dev", "libpng-dev",
@@ -55,11 +54,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
     .clone_url = "https://github.com/widelands/widelands.git",
     .clone_dir = "widelands", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "widelands", .uninstall_cmd = uninstall,
+    .bin = "widelands",
 }};
 
 static const Game game_data = {

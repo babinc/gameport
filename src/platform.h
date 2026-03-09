@@ -74,6 +74,7 @@ void plat_term_write(const char *buf, size_t len);
 int   plat_file_exists(const char *path);
 int   plat_is_executable(const char *path);
 void  plat_mkdir_p(const char *path);
+int   plat_rmdir_rf(const char *path);  /* recursive delete, returns 1=ok */
 char *plat_which(const char *bin);   /* malloc'd path or NULL */
 
 /* ── Misc ────────────────────────────────────────────────────── */

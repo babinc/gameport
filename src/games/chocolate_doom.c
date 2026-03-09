@@ -38,7 +38,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./build/src/chocolate-doom", "-iwad", "./wads/freedoom2.wad", NULL};
-static const char *uninstall[] = {"git-game-remove", "chocolate-doom", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libsdl2-dev", "libsdl2-mixer-dev",
     "libsdl2-net-dev", "libpng-dev", "unzip", "curl", NULL};
@@ -52,11 +51,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
     .clone_url = "https://github.com/chocolate-doom/chocolate-doom.git",
     .clone_dir = "chocolate-doom", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "chocolate-doom", .uninstall_cmd = uninstall,
+    .bin = "chocolate-doom",
 }};
 
 static const Game game_data = {

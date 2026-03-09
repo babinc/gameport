@@ -14,7 +14,7 @@ static const char *keys[] = {
 static const char *uninstall[] = {"cargo", "uninstall", "chess-tui", NULL};
 
 static const Source sources[] = {{
-    .method = METHOD_CARGO, .label = "cargo install",
+    .method = ACQUIRE_CARGO, .label = "cargo install",
     .bin = "chess-tui", .uninstall_cmd = uninstall,
 }};
 

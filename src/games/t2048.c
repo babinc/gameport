@@ -9,7 +9,7 @@ static const char *keys[] = {
 static const char *uninstall[] = {"cargo", "uninstall", "cli_2048", NULL};
 
 static const Source sources[] = {{
-    .method = METHOD_CARGO, .label = "cargo install",
+    .method = ACQUIRE_CARGO, .label = "cargo install",
     .bin = "2048", .uninstall_cmd = uninstall,
 }};
 

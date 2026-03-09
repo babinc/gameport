@@ -43,6 +43,10 @@ typedef struct {
     int panel_scroll;
     int active_game;          /* real GAMES[] index of game being installed/run */
 
+    /* Command chain: next command to run after current child exits OK */
+    char **next_cmd;          /* NULL-terminated, malloc'd (freed after use) */
+    char *next_cwd;           /* malloc'd or NULL */
+
     /* Border flash (countdown ticks for install-complete flash) */
     int border_flash;
 

@@ -3,9 +3,9 @@
 
 #include <stddef.h>   /* NULL */
 
-/* ── Install method enum ──────────────────────────────────────── */
-typedef enum { METHOD_CARGO, METHOD_GIT } MethodType;
-const char *method_str(MethodType m);
+/* ── Acquire method ──────────────────────────────────────────── */
+typedef enum { ACQUIRE_CARGO, ACQUIRE_GIT } AcquireMethod;
+const char *acquire_str(AcquireMethod m);
 
 /* ── Platform deps ────────────────────────────────────────────── */
 typedef struct {
@@ -18,7 +18,7 @@ typedef struct {
 
 /* ── Source (a way to acquire and run a game) ─────────────────── */
 typedef struct {
-    MethodType method;
+    AcquireMethod method;
     const char *label;          /* shown in UI */
 
     /* Acquire */

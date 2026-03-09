@@ -55,7 +55,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"../darkmod/thedarkmod.x64", NULL};
-static const char *uninstall[] = {"git-game-remove", "darkmod_src", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "subversion", "mesa-common-dev",
@@ -69,11 +68,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
     .clone_url = "https://github.com/stgatilov/darkmod_src.git",
     .clone_dir = "darkmod_src", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "thedarkmod.x64", .uninstall_cmd = uninstall,
+    .bin = "thedarkmod.x64",
 }};
 
 static const Game game_data = {

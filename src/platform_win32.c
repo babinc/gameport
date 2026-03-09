@@ -393,6 +393,31 @@ void plat_mkdir_p(const char *path) {
     _mkdir(tmp);
 }
 
+static int rmdir_rf_impl(const char *path) {
+    char search[MAX_PATH];
+    snprintf(search, sizeof(search), "%s\\*", path);
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA(search, &fd);
+    if (h == INVALID_HANDLE_VALUE) return DeleteFileA(path);
+    int ok = 1;
+    do {
+        if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
+            continue;
+        char child[MAX_PATH];
+        snprintf(child, sizeof(child), "%s\\%s", path, fd.cFileName);
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            ok = rmdir_rf_impl(child) && ok;
+        else
+            ok = DeleteFileA(child) && ok;
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+    return RemoveDirectoryA(path) && ok;
+}
+
+int plat_rmdir_rf(const char *path) {
+    return rmdir_rf_impl(path);
+}
+
 char *plat_which(const char *bin) {
     const char *path_env = getenv("PATH");
     if (!path_env) return NULL;

@@ -30,7 +30,6 @@ static const char *build[] = {
     NULL
 };
 static const char *play[] = {"./redeclipse.sh", NULL};
-static const char *uninstall[] = {"git-game-remove", "red-eclipse", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "libsdl2-dev", "libsdl2-image-dev",
@@ -45,11 +44,11 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    .method = METHOD_GIT, .label = "Build from source (git + make)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + make)",
     .clone_url = "https://github.com/redeclipse/base.git",
     .clone_dir = "red-eclipse",
     .build_cmd = build, .play_cmd = play,
-    .bin = "redeclipse_linux", .uninstall_cmd = uninstall,
+    .bin = "redeclipse_linux",
 }};
 
 static const Game game_data = {
