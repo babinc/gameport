@@ -17,6 +17,9 @@ typedef enum {
     MODE_CONTROLS,
 } AppMode;
 
+/* ── Constants ────────────────────────────────────────────────── */
+#define MAX_CATEGORIES 16
+
 /* ── App state ────────────────────────────────────────────────── */
 typedef struct {
     int selected;
@@ -55,7 +58,8 @@ typedef struct {
 
     /* Category filter */
     int cat_index;            /* 0 = ALL, 1..N = specific category */
-    int cat_collapsed[16];    /* per-category collapse state (indexed by CATEGORIES) */
+    int cat_collapsed[MAX_CATEGORIES];
+    int cat_counts[MAX_CATEGORIES]; /* cached game count per category */
 
     /* Source selection */
     int source_selected;      /* cursor in source picker */

@@ -31,20 +31,24 @@ static int search_matches(const char *name, const char *search, int search_len) 
 void app_rebuild_filter(App *app) {
     app->filter_count = 0;
 
+    /* Compute per-category counts (used by renderers too) */
+    memset(app->cat_counts, 0, sizeof(app->cat_counts));
+    for (int i = 0; i < NUM_GAMES; i++) {
+        for (int c = 1; c < NUM_CATEGORIES; c++) {
+            if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0) {
+                app->cat_counts[c]++;
+                break;
+            }
+        }
+    }
+
     if (app->cat_index == 0 && app->search_len == 0) {
         /* ALL view: group by category with headers */
         for (int c = 1; c < NUM_CATEGORIES; c++) {
-            /* Count games in this category */
-            int count = 0;
-            for (int i = 0; i < NUM_GAMES; i++) {
-                if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0) count++;
-            }
-            if (count == 0) continue;
+            if (app->cat_counts[c] == 0) continue;
 
-            /* Add category header */
             app->filtered[app->filter_count++] = MAKE_HEADER(c);
 
-            /* Add games if not collapsed */
             if (!app->cat_collapsed[c]) {
                 for (int i = 0; i < NUM_GAMES; i++) {
                     if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0)
@@ -286,9 +290,7 @@ static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
             scr_str_n(s, cx, row, CATEGORIES[ci], name_max, cat_clr, bg, 1);
 
             /* Game count at right */
-            int count = 0;
-            for (int g = 0; g < NUM_GAMES; g++)
-                if (strcmp(GAMES[g].category, CATEGORIES[ci]) == 0) count++;
+            int count = app->cat_counts[ci];
             char cbuf[8];
             snprintf(cbuf, sizeof(cbuf), "(%d)", count);
             int clen = (int)strlen(cbuf);
@@ -364,9 +366,7 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
         Color cat_clr = category_color(CATEGORIES[ci]);
         scr_str_n(s, ix, row, CATEGORIES[ci], iw, cat_clr, CLR_BG, 1);
         row += 2;
-        int count = 0;
-        for (int g = 0; g < NUM_GAMES; g++)
-            if (strcmp(GAMES[g].category, CATEGORIES[ci]) == 0) count++;
+        int count = app->cat_counts[ci];
         char info[64];
         snprintf(info, sizeof(info), "%d game%s", count, count == 1 ? "" : "s");
         scr_str_n(s, ix, row, info, iw, CLR_DIMWHITE, CLR_BG, 0);
