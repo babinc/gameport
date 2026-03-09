@@ -351,7 +351,7 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     /* Metadata */
     if (row < y + h - 1) { detail_row(s, ix, row, iw, "Type      ", g->category, CLR_YELLOW); row++; }
     if (row < y + h - 1 && g->keys && g->keys[0]) {
-        /* Show first key as preview */
+        /* Show first 2 keys as preview */
         char preview[128] = "";
         for (int i = 0; g->keys[i] && i < 2; i++) {
             const char *pipe = strchr(g->keys[i], '|');
@@ -366,6 +366,14 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
         strncat(preview, ", ...", sizeof(preview) - strlen(preview) - 1);
         detail_row(s, ix, row, iw, "Keys      ", preview, (Color){220,180,100});
         row++;
+        /* Hint to open full controls view */
+        if (row < y + h - 1) {
+            int hx = ix + 10; /* align under value column */
+            hx += scr_str_n(s, hx, row, "press ", iw - 10, CLR_HINT, CLR_BG, 0);
+            hx += scr_str_n(s, hx, row, "c", iw - (hx - ix), CLR_CYAN, CLR_BG, 1);
+            scr_str_n(s, hx, row, " for all controls", iw - (hx - ix), CLR_HINT, CLR_BG, 0);
+            row++;
+        }
     }
     row++;
 
@@ -737,7 +745,11 @@ static void render_footer(Screen *s, App *app, int y) {
         cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
         cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
     } else if (app->mode == MODE_CONTROLS) {
+        /* Same as VIEWLOG minus PgUp/PgDn */
         cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
+        cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+        cx += scr_str_n(s, cx, ky, "Up/Down", w - cx - 1, CLR_CYAN, CLR_BG, 1);
         cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
         cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
         cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);

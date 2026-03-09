@@ -35,17 +35,20 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    METHOD_GIT, "Build from source (git + gcc)",
-    "https://gitlab.com/drummyfish/anarch.git", "anarch", 1,
-    build, play, "anarch", uninstall,
+    .method = METHOD_GIT, .label = "Build from source (git + gcc)",
+    .clone_url = "https://gitlab.com/drummyfish/anarch.git",
+    .clone_dir = "anarch", .shallow = 1,
+    .build_cmd = build, .play_cmd = play,
+    .bin = "anarch", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "Anarch", "F",
-    "Retro first-person shooter inspired by Doom. 10 levels, multiple weapons, all assets embedded in source code. Tiny, fast, zero external files needed.",
-    keys, "Action",
-    "SDL2", "https://gitlab.com/drummyfish/anarch",
-    platforms, deps, 3, sources, 1,
+    .name = "Anarch", .icon = "F",
+    .desc = "Retro first-person shooter inspired by Doom. 10 levels, multiple weapons, all assets embedded in source code. Tiny, fast, zero external files needed.",
+    .keys = keys, .category = "Action",
+    .engine = "SDL2", .repo = "https://gitlab.com/drummyfish/anarch",
+    .platforms = platforms, .platform_deps = deps, .num_deps = 3,
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_anarch(void) { return &game_data; }

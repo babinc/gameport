@@ -46,17 +46,20 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    METHOD_GIT, "Build from source (cmake + raylib)",
-    "https://github.com/raysan5/raylib-games.git", "asteroids", 1,
-    build, play, "asteroids", uninstall,
+    .method = METHOD_GIT, .label = "Build from source (cmake + raylib)",
+    .clone_url = "https://github.com/raysan5/raylib-games.git",
+    .clone_dir = "asteroids", .shallow = 1,
+    .build_cmd = build, .play_cmd = play,
+    .bin = "asteroids", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "Asteroids", "A",
-    "Classic Asteroids in a graphical window. Pilot a ship, rotate and thrust to dodge, shoot to break asteroids into smaller pieces. Built with raylib -- pure C.",
-    keys, "Action",
-    "raylib", "https://github.com/raysan5/raylib-games",
-    platforms, deps, 3, sources, 1,
+    .name = "Asteroids", .icon = "A",
+    .desc = "Classic Asteroids in a graphical window. Pilot a ship, rotate and thrust to dodge, shoot to break asteroids into smaller pieces. Built with raylib -- pure C.",
+    .keys = keys, .category = "Action",
+    .engine = "raylib", .repo = "https://github.com/raysan5/raylib-games",
+    .platforms = platforms, .platform_deps = deps, .num_deps = 3,
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_asteroids(void) { return &game_data; }

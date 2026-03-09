@@ -14,16 +14,16 @@ static const char *keys[] = {
 static const char *uninstall[] = {"cargo", "uninstall", "sxtetris", NULL};
 
 static const Source sources[] = {{
-    METHOD_CARGO, "cargo install",
-    "", "", 1, NULL, NULL, "sxtetris", uninstall,
+    .method = METHOD_CARGO, .label = "cargo install",
+    .bin = "sxtetris", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "Tetris", "T",
-    "Falling block puzzle. Rotate and position tetrominoes to fill complete rows. Completed rows disappear. Game ends when blocks stack to the top.",
-    keys, "Action",
-    "ratatui", "https://crates.io/crates/sxtetris",
-    NULL, NULL, 0, sources, 1,
+    .name = "Tetris", .icon = "T",
+    .desc = "Falling block puzzle. Rotate and position tetrominoes to fill complete rows. Completed rows disappear. Game ends when blocks stack to the top.",
+    .keys = keys, .category = "Action",
+    .engine = "ratatui", .repo = "https://crates.io/crates/sxtetris",
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_tetris(void) { return &game_data; }

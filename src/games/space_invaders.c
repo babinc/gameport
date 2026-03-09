@@ -45,17 +45,20 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    METHOD_GIT, "Build from source (cmake + raylib)",
-    "https://github.com/raysan5/raylib-games.git", "space_invaders", 1,
-    build, play, "space_invaders", uninstall,
+    .method = METHOD_GIT, .label = "Build from source (cmake + raylib)",
+    .clone_url = "https://github.com/raysan5/raylib-games.git",
+    .clone_dir = "space_invaders", .shallow = 1,
+    .build_cmd = build, .play_cmd = play,
+    .bin = "space_invaders", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "Space Invaders", "V",
-    "Classic Space Invaders in a graphical window. Shoot descending waves of aliens before they reach the bottom. Built with raylib -- pure C, zero dependencies.",
-    keys, "Action",
-    "raylib", "https://github.com/raysan5/raylib-games",
-    platforms, deps, 3, sources, 1,
+    .name = "Space Invaders", .icon = "V",
+    .desc = "Classic Space Invaders in a graphical window. Shoot descending waves of aliens before they reach the bottom. Built with raylib -- pure C, zero dependencies.",
+    .keys = keys, .category = "Action",
+    .engine = "raylib", .repo = "https://github.com/raysan5/raylib-games",
+    .platforms = platforms, .platform_deps = deps, .num_deps = 3,
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_space_invaders(void) { return &game_data; }

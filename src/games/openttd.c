@@ -45,17 +45,20 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    METHOD_GIT, "Build from source (git + cmake)",
-    "https://github.com/OpenTTD/OpenTTD.git", "OpenTTD", 0,
-    build, play, "OpenTTD", uninstall,
+    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .clone_url = "https://github.com/OpenTTD/OpenTTD.git",
+    .clone_dir = "OpenTTD",
+    .build_cmd = build, .play_cmd = play,
+    .bin = "OpenTTD", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "OpenTTD", "O",
-    "Open-source Transport Tycoon Deluxe. Build rail, road, air, and sea networks to transport passengers and cargo. Compete against AI or friends. Free assets included.",
-    keys, "Simulation",
-    "SDL2", "https://github.com/OpenTTD/OpenTTD",
-    platforms, deps, 2, sources, 1,
+    .name = "OpenTTD", .icon = "O",
+    .desc = "Open-source Transport Tycoon Deluxe. Build rail, road, air, and sea networks to transport passengers and cargo. Compete against AI or friends. Free assets included.",
+    .keys = keys, .category = "Simulation",
+    .engine = "SDL2", .repo = "https://github.com/OpenTTD/OpenTTD",
+    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_openttd(void) { return &game_data; }

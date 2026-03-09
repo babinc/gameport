@@ -14,16 +14,16 @@ static const char *keys[] = {
 static const char *uninstall[] = {"cargo", "uninstall", "chess-tui", NULL};
 
 static const Source sources[] = {{
-    METHOD_CARGO, "cargo install",
-    "", "", 1, NULL, NULL, "chess-tui", uninstall,
+    .method = METHOD_CARGO, .label = "cargo install",
+    .bin = "chess-tui", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "Chess TUI", "K",
-    "Full chess in the terminal. Play vs a friend locally, against a UCI engine (Stockfish), or online via Lichess. Supports multiple board skins.",
-    keys, "Strategy",
-    "ratatui", "https://crates.io/crates/chess-tui",
-    NULL, NULL, 0, sources, 1,
+    .name = "Chess TUI", .icon = "K",
+    .desc = "Full chess in the terminal. Play vs a friend locally, against a UCI engine (Stockfish), or online via Lichess. Supports multiple board skins.",
+    .keys = keys, .category = "Strategy",
+    .engine = "ratatui", .repo = "https://crates.io/crates/chess-tui",
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_chess_tui(void) { return &game_data; }

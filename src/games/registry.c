@@ -34,6 +34,7 @@ int NUM_GAMES;
 
 void catalog_init(void) {
     NUM_GAMES = (int)(sizeof(game_fns) / sizeof(game_fns[0]));
+    if (NUM_GAMES > MAX_GAMES) NUM_GAMES = MAX_GAMES;
     for (int i = 0; i < NUM_GAMES; i++)
         GAMES[i] = *game_fns[i]();
 }

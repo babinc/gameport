@@ -20,16 +20,16 @@ static const char *keys[] = {
 static const char *uninstall[] = {"cargo", "uninstall", "rec-wars", NULL};
 
 static const Source sources[] = {{
-    METHOD_CARGO, "cargo install",
-    "", "", 1, NULL, NULL, "rec-wars", uninstall,
+    .method = METHOD_CARGO, .label = "cargo install",
+    .bin = "rec-wars", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "RecWars", "W",
-    "Top-down tank deathmatch. Drive tanks, hovercraft, or hummers and blast opponents with 8 weapons. Free-for-all, team war, or capture the cow. Graphical window.",
-    keys, "Action",
-    "macroquad", "https://crates.io/crates/rec-wars",
-    NULL, NULL, 0, sources, 1,
+    .name = "RecWars", .icon = "W",
+    .desc = "Top-down tank deathmatch. Drive tanks, hovercraft, or hummers and blast opponents with 8 weapons. Free-for-all, team war, or capture the cow. Graphical window.",
+    .keys = keys, .category = "Action",
+    .engine = "macroquad", .repo = "https://crates.io/crates/rec-wars",
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_recwars(void) { return &game_data; }

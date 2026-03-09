@@ -52,17 +52,20 @@ static const PlatformDeps deps[] = {
 };
 
 static const Source sources[] = {{
-    METHOD_GIT, "Build from source (git + cmake)",
-    "https://github.com/chocolate-doom/chocolate-doom.git", "chocolate-doom", 1,
-    build, play, "chocolate-doom", uninstall,
+    .method = METHOD_GIT, .label = "Build from source (git + cmake)",
+    .clone_url = "https://github.com/chocolate-doom/chocolate-doom.git",
+    .clone_dir = "chocolate-doom", .shallow = 1,
+    .build_cmd = build, .play_cmd = play,
+    .bin = "chocolate-doom", .uninstall_cmd = uninstall,
 }};
 
 static const Game game_data = {
-    "Chocolate Doom", "D",
-    "Faithful recreation of the original Doom engine. Plays just like the 1993 classic. Bundled with Freedoom -- free community-made levels and assets.",
-    keys, "Shooter",
-    "SDL2", "https://github.com/chocolate-doom/chocolate-doom",
-    platforms, deps, 2, sources, 1,
+    .name = "Chocolate Doom", .icon = "D",
+    .desc = "Faithful recreation of the original Doom engine. Plays just like the 1993 classic. Bundled with Freedoom -- free community-made levels and assets.",
+    .keys = keys, .category = "Shooter",
+    .engine = "SDL2", .repo = "https://github.com/chocolate-doom/chocolate-doom",
+    .platforms = platforms, .platform_deps = deps, .num_deps = 2,
+    .sources = sources, .num_sources = 1,
 };
 
 const Game *game_chocolate_doom(void) { return &game_data; }
