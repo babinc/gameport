@@ -20,6 +20,7 @@ typedef struct {
 typedef struct {
     AcquireMethod method;
     const char *label;          /* shown in UI */
+    const char **platforms;     /* NULL-terminated, NULL = all */
 
     /* Acquire */
     const char *clone_url;
@@ -63,5 +64,7 @@ const char     *current_platform(void);
 int             game_supports_platform(const Game *g);
 const PlatformDeps *platform_deps_for_current(const Game *g);
 const Source   *default_source(const Game *g);
+int             default_source_index(const Game *g);
+int             count_platform_sources(const Game *g);
 
 #endif

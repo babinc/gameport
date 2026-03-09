@@ -646,15 +646,17 @@ int main(void) {
                         snprintf(msg, sizeof(msg), "%s not installed", g->name);
                         app_set_message(&app, msg, 0);
                     } else if (installing) {
-                        app.source_selected = 0;
-                        if (g->num_sources > 1) {
+                        int dsi = default_source_index(g);
+                        app.source_selected = dsi >= 0 ? dsi : 0;
+                        if (count_platform_sources(g) > 1) {
                             app.mode = MODE_SOURCE_SELECT;
                         } else {
                             try_install_source(&app, scr, &w, &h);
                         }
                     } else {
-                        /* Uninstall — use first source */
-                        app.source_selected = 0;
+                        /* Uninstall — use platform-appropriate source */
+                        int dsi = default_source_index(g);
+                        app.source_selected = dsi >= 0 ? dsi : 0;
                         begin_uninstall(&app, src);
                     }
                 }
