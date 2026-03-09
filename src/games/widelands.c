@@ -39,7 +39,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "g++", "libglew-dev", "libpng-dev",
     "libsdl2-dev", "libsdl2-image-dev", "libsdl2-mixer-dev",
     "libsdl2-ttf-dev", "python3", "zlib1g-dev", "libminizip-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-ttf-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libglew-dev libsdl2-ttf-dev libsdl2-image-dev libminizip-dev cmake >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "cmake", "glew",
     "sdl2", "sdl2_image", "sdl2_mixer", "sdl2_ttf", "libpng",
     "minizip", "ninja", NULL};

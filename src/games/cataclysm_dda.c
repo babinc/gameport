@@ -30,7 +30,8 @@ static const char *play[] = {"./cataclysm", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "libncurses5-dev", "libncursesw5-dev", "gettext", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libncursesw5-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libncurses5-dev libncursesw5-dev gettext >/dev/null 2>&1", NULL};
 static const PlatformDeps deps[] = {
     { "linux", "build-essential libncurses5-dev libncursesw5-dev", linux_install, linux_check, 1 },
     { "macos", "Xcode CLI tools", MAC_XCODE_INSTALL, MAC_XCODE_CHECK, 0 },

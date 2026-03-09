@@ -48,7 +48,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "libopus-dev", "libtheora-dev", "libxrandr-dev", "libfreetype-dev",
     "libfribidi-dev", "libharfbuzz-dev", "libcurl4-gnutls-dev",
     "libsodium-dev", "libsqlite3-dev", "libzip-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libphysfs-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libphysfs-dev libopenal-dev libvorbis-dev libsodium-dev libsqlite3-dev libzip-dev cmake >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "cmake", "pkg-config",
     "gettext", "physfs", "openal-soft", "libvorbis", "opus", "theora",
     "freetype", "fribidi", "harfbuzz", "libsodium", "sqlite",

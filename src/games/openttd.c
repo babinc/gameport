@@ -33,7 +33,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libsdl2-dev", "libfreetype-dev",
     "libfontconfig1-dev", "libicu-dev", "libharfbuzz-dev",
     "liblzma-dev", "libpng-dev", "zlib1g-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libsdl2-dev libfontconfig1-dev libicu-dev libharfbuzz-dev cmake >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "sdl2", "freetype", "fontconfig",
     "icu4c", "harfbuzz", "xz", "libpng", NULL};
 static const char *mac_check[] = {"brew", "list", "sdl2", NULL};

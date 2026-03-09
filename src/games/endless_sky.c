@@ -32,7 +32,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "libsdl2-dev", "libpng-dev", "libjpeg-dev",
     "libgl1-mesa-dev", "libglew-dev", "libopenal-dev",
     "libmad0-dev", "uuid-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libglew-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libglew-dev libsdl2-dev libopenal-dev libmad0-dev cmake >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "cmake",
     "sdl2", "libpng", "jpeg", "glew", "openal-soft", "mad", NULL};
 static const char *mac_check[] = {"brew", "list", "glew", NULL};

@@ -36,7 +36,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "libsdl2-mixer-dev", "libopenal-dev", "libsndfile-dev",
     "zlib1g-dev", "libgl-dev", "libx11-dev", "libfreetype-dev",
     "pkg-config", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-image-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libsdl2-image-dev libsdl2-mixer-dev libopenal-dev libsndfile-dev libgl-dev >/dev/null 2>&1", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "build-essential libsdl2-dev libsdl2-image-dev libopenal-dev ...",

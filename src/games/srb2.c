@@ -18,7 +18,6 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", NULL};
 
 static const char *build[] = {
     "bash", "-c",
@@ -49,7 +48,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "libsdl2-dev", "libsdl2-mixer-dev",
     "libpng-dev", "libcurl4-openssl-dev", "libgme-dev",
     "libopenmpt-dev", "libminiupnpc-dev", "unzip", "curl", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-mixer-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libsdl2-mixer-dev libgme-dev libopenmpt-dev libminiupnpc-dev >/dev/null 2>&1", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "build-essential libsdl2-dev libsdl2-mixer-dev libpng-dev ...",
@@ -69,7 +69,7 @@ static const Game game_data = {
     .desc = "Fan-made 3D Sonic the Hedgehog platformer built on Doom engine. Singleplayer campaign, multiplayer modes, and mod support. Free game assets downloaded automatically.",
     .keys = keys, .category = "Platformer",
     .engine = "Doom (SDL2)", .repo = "https://github.com/STJr/SRB2",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 1,
+    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

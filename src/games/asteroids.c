@@ -64,7 +64,8 @@ static const char *win_play[] = {"build\\Release\\asteroids.exe", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libgl1-mesa-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "cmake", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s cmake libgl1-mesa-dev >/dev/null 2>&1", NULL};
 static const char *win_check[] = {"cmake", "--version", NULL};
 
 static const PlatformDeps deps[] = {

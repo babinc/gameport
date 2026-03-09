@@ -60,7 +60,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "subversion", "mesa-common-dev",
     "libxxf86vm-dev", "libopenal-dev", "libxext-dev",
     "libx11-dev", "unzip", "curl", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libopenal-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s cmake subversion mesa-common-dev libxxf86vm-dev libopenal-dev libxext-dev >/dev/null 2>&1", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "build-essential cmake subversion mesa-common-dev libopenal-dev ...",

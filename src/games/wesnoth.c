@@ -35,7 +35,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "libsdl2-dev", "libsdl2-image-dev", "libsdl2-mixer-dev", "libsdl2-ttf-dev",
     "libcairo2-dev", "libpango1.0-dev", "libvorbis-dev",
     "libcurl4-openssl-dev", "libssl-dev", "libreadline-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libboost-all-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libboost-all-dev libsdl2-image-dev libcairo2-dev libpango1.0-dev libvorbis-dev cmake >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "cmake", "boost",
     "sdl2", "sdl2_image", "sdl2_mixer", "sdl2_ttf",
     "cairo", "pango", "libvorbis", "openssl", "readline", NULL};

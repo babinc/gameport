@@ -39,7 +39,8 @@ static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "libfreetype6-dev", "libharfbuzz-dev", "libjpeg-dev",
     "libogg-dev", "libopenal-dev", "libpng-dev", "libssl-dev",
     "libvorbis-dev", "pkg-config", "zlib1g-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libsdl2-dev libcurl4-openssl-dev libenet-dev libopenal-dev libvorbis-dev cmake >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "cmake", "subversion",
     "sdl2", "curl", "freetype", "harfbuzz", "libogg", "openal-soft",
     "libpng", "libvorbis", NULL};

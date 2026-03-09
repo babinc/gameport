@@ -40,7 +40,8 @@ static const char *play[] = {"./build/src/chocolate-doom", "-iwad", "./wads/free
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libsdl2-dev", "libsdl2-mixer-dev",
     "libsdl2-net-dev", "libpng-dev", "unzip", "curl", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-net-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libsdl2-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev cmake >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "sdl2", "sdl2_mixer", "sdl2_net", "libpng", "libsamplerate", "fluid-synth", NULL};
 static const char *mac_check[] = {"brew", "list", "sdl2_net", NULL};
 

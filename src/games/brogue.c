@@ -28,7 +28,8 @@ static const char *play[] = {"./bin/brogue", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "make", "gcc", "diffutils", "libsdl2-dev", "libsdl2-image-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-image-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libsdl2-dev libsdl2-image-dev >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "sdl2", "sdl2_image", NULL};
 static const char *mac_check[] = {"brew", "list", "sdl2_image", NULL};
 

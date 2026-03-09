@@ -64,7 +64,8 @@ static const char *play[] = {"./install/games/nethack", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "bison", "flex", "libncurses5-dev", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "bison", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s bison flex libncurses5-dev >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "bison", "flex", NULL};
 static const char *mac_check[] = {"brew", "list", "bison", NULL};
 

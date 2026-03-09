@@ -23,7 +23,8 @@ static const char *keys[] = {
 static const char *build[] = {"bash", "make.sh", "sdl", NULL};
 static const char *play[] = {"./anarch", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y", "libsdl2-dev", "g++", NULL};
-static const char *linux_check[] = {"dpkg", "-s", "libsdl2-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libsdl2-dev g++ >/dev/null 2>&1", NULL};
 static const char *mac_install[] = {"brew", "install", "sdl2", NULL};
 static const char *mac_check[] = {"brew", "list", "sdl2", NULL};
 
