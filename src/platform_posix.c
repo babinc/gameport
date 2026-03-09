@@ -39,11 +39,11 @@ void plat_term_init(void) {
     tcgetattr(STDIN_FILENO, &orig_termios);
     set_raw_mode();
     raw_mode_on = 1;
-    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_ON_LEN));
 }
 
 void plat_term_cleanup(void) {
-    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_OFF_LEN));
     if (raw_mode_on) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
         raw_mode_on = 0;
@@ -51,7 +51,7 @@ void plat_term_cleanup(void) {
 }
 
 void plat_term_suspend(void) {
-    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_OFF_LEN));
     if (raw_mode_on) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
     }
@@ -59,7 +59,7 @@ void plat_term_suspend(void) {
 
 void plat_term_resume(void) {
     set_raw_mode();
-    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN));
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_ON_LEN));
 }
 
 void plat_term_get_size(int *w, int *h) {

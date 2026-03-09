@@ -78,12 +78,12 @@ void plat_term_init(void) {
     raw_mode_on = 1;
 
     /* Alternate screen + hide cursor */
-    plat_term_write(TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN);
+    plat_term_write(TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_ON_LEN);
 }
 
 void plat_term_cleanup(void) {
     /* Show cursor + leave alternate screen */
-    plat_term_write(TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN);
+    plat_term_write(TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_OFF_LEN);
 
     if (raw_mode_on) {
         HANDLE hIn  = GetStdHandle(STD_INPUT_HANDLE);
@@ -97,7 +97,7 @@ void plat_term_cleanup(void) {
 }
 
 void plat_term_suspend(void) {
-    plat_term_write(TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_LEN);
+    plat_term_write(TERM_ALT_SCREEN_OFF, TERM_ALT_SCREEN_OFF_LEN);
     if (raw_mode_on) {
         HANDLE hIn  = GetStdHandle(STD_INPUT_HANDLE);
         HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -108,7 +108,7 @@ void plat_term_suspend(void) {
 
 void plat_term_resume(void) {
     set_raw_mode();
-    plat_term_write(TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_LEN);
+    plat_term_write(TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_ON_LEN);
 }
 
 void plat_term_get_size(int *w, int *h) {
