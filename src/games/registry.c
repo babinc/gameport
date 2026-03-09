@@ -11,6 +11,12 @@ const Game *game_asteroids(void);
 const Game *game_anarch(void);
 const Game *game_chocolate_doom(void);
 const Game *game_openttd(void);
+const Game *game_supertuxkart(void);
+const Game *game_warzone2100(void);
+const Game *game_widelands(void);
+const Game *game_srb2(void);
+const Game *game_red_eclipse(void);
+const Game *game_thedarkmod(void);
 
 typedef const Game *(*GameFn)(void);
 
@@ -25,6 +31,12 @@ static const GameFn game_fns[] = {
     game_anarch,
     game_chocolate_doom,
     game_openttd,
+    game_supertuxkart,
+    game_warzone2100,
+    game_widelands,
+    game_srb2,
+    game_red_eclipse,
+    game_thedarkmod,
 };
 
 #define MAX_GAMES 32
