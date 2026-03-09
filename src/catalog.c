@@ -169,6 +169,34 @@ static const PlatformDeps cd_deps[] = {
     { "macos", "SDL2 SDL2_mixer SDL2_net libpng", cd_mac_install, cd_mac_check, 0 },
 };
 
+/* OpenTTD — git + cmake */
+static const char *ot_platforms[] = {"linux", "macos", NULL};
+static const char *ot_build[] = {
+    "bash", "-c",
+    "set -e\n"
+    "mkdir -p build && cd build\n"
+    "echo 'Configuring cmake...'\n"
+    "cmake .. -DCMAKE_BUILD_TYPE=Release\n"
+    "echo 'Building (this may take a while)...'\n"
+    "make -j$(nproc)",
+    NULL
+};
+static const char *ot_play[] = {"./build/openttd", NULL};
+static const char *ot_uninstall[] = {"git-game-remove", "OpenTTD", NULL};
+static const char *ot_linux_install[] = {"sudo", "apt", "install", "-y",
+    "build-essential", "cmake", "libsdl2-dev", "libfreetype-dev",
+    "libfontconfig1-dev", "libicu-dev", "libharfbuzz-dev",
+    "liblzma-dev", "libpng-dev", "zlib1g-dev", NULL};
+static const char *ot_linux_check[] = {"dpkg", "-s", "libsdl2-dev", NULL};
+static const char *ot_mac_install[] = {"brew", "install", "sdl2", "freetype", "fontconfig",
+    "icu4c", "harfbuzz", "xz", "libpng", NULL};
+static const char *ot_mac_check[] = {"brew", "list", "sdl2", NULL};
+
+static const PlatformDeps ot_deps[] = {
+    { "linux", "libsdl2-dev libfreetype-dev libfontconfig1-dev libicu-dev", ot_linux_install, ot_linux_check, 1 },
+    { "macos", "SDL2 freetype fontconfig icu4c harfbuzz", ot_mac_install, ot_mac_check, 0 },
+};
+
 /* ── Sources ──────────────────────────────────────────────────── */
 
 static const Source ms_sources[] = {{
@@ -218,6 +246,12 @@ static const Source cd_sources[] = {{
     METHOD_GIT, "Build from source (git + cmake)",
     "https://github.com/chocolate-doom/chocolate-doom.git", "chocolate-doom", 1,
     cd_build, cd_play, "chocolate-doom", cd_uninstall,
+}};
+
+static const Source ot_sources[] = {{
+    METHOD_GIT, "Build from source (git + cmake)",
+    "https://github.com/OpenTTD/OpenTTD.git", "OpenTTD", 0,
+    ot_build, ot_play, "OpenTTD", ot_uninstall,
 }};
 
 /* ── Game catalog ─────────────────────────────────────────────── */
@@ -285,6 +319,13 @@ const Game GAMES[] = {
         "WASD move, Mouse aim, Ctrl fire, Space use/open, Shift run", "Shooter",
         "SDL2", "https://github.com/chocolate-doom/chocolate-doom",
         cd_platforms, cd_deps, 2, cd_sources, 1,
+    },
+    {
+        "OpenTTD", "O",
+        "Open-source Transport Tycoon Deluxe. Build rail, road, air, and sea networks to transport passengers and cargo. Compete against AI or friends. Free assets included.",
+        "Mouse point-and-click, Scroll zoom, Del demolish, Hotkeys in manual", "Simulation",
+        "SDL2", "https://github.com/OpenTTD/OpenTTD",
+        ot_platforms, ot_deps, 2, ot_sources, 1,
     },
 };
 
