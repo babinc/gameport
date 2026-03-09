@@ -55,10 +55,16 @@ typedef struct {
 
     /* Category filter */
     int cat_index;            /* 0 = ALL, 1..N = specific category */
+    int cat_collapsed[16];    /* per-category collapse state (indexed by CATEGORIES) */
 
     /* Source selection */
     int source_selected;      /* cursor in source picker */
 } App;
+
+/* ── Filtered list encoding ──────────────────────────────────── */
+#define IS_HEADER(x)    ((x) < 0)
+#define HEADER_CAT(x)   (-(x) - 1)       /* filtered value → CATEGORIES index */
+#define MAKE_HEADER(c)  (-(c) - 1)        /* CATEGORIES index → filtered value */
 
 /* ── App lifecycle ────────────────────────────────────────────── */
 void app_init(App *app);

@@ -10,33 +10,58 @@
 
 /* ── Categories ───────────────────────────────────────────────── */
 
-static const char *CATEGORIES[] = {"ALL", "Action", "Puzzle", "Strategy", "Shooter", "Racing", "Simulation"};
+static const char *CATEGORIES[] = {
+    "ALL", "Action", "Puzzle", "Strategy", "Shooter",
+    "Racing", "Simulation", "Platformer", "Stealth",
+};
 const int NUM_CATEGORIES = sizeof(CATEGORIES) / sizeof(CATEGORIES[0]);
+
+static int search_matches(const char *name, const char *search, int search_len) {
+    for (int n = 0; name[n]; n++) {
+        int match = 1;
+        for (int s = 0; s < search_len && match; s++) {
+            if (!name[n + s] || tolower((unsigned char)name[n + s]) != tolower((unsigned char)search[s]))
+                match = 0;
+        }
+        if (match) return 1;
+    }
+    return 0;
+}
 
 void app_rebuild_filter(App *app) {
     app->filter_count = 0;
-    const char *cat = (app->cat_index == 0) ? NULL : CATEGORIES[app->cat_index];
 
-    for (int i = 0; i < NUM_GAMES; i++) {
-        /* Category filter */
-        if (cat && strcmp(GAMES[i].category, cat) != 0) continue;
-
-        /* Search filter (case-insensitive substring) */
-        if (app->search_len > 0) {
-            const char *name = GAMES[i].name;
-            int found = 0;
-            for (int n = 0; name[n]; n++) {
-                int match = 1;
-                for (int s = 0; s < app->search_len && match; s++) {
-                    if (!name[n + s] || tolower((unsigned char)name[n + s]) != tolower((unsigned char)app->search[s]))
-                        match = 0;
-                }
-                if (match) { found = 1; break; }
+    if (app->cat_index == 0 && app->search_len == 0) {
+        /* ALL view: group by category with headers */
+        for (int c = 1; c < NUM_CATEGORIES; c++) {
+            /* Count games in this category */
+            int count = 0;
+            for (int i = 0; i < NUM_GAMES; i++) {
+                if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0) count++;
             }
-            if (!found) continue;
-        }
+            if (count == 0) continue;
 
-        app->filtered[app->filter_count++] = i;
+            /* Add category header */
+            app->filtered[app->filter_count++] = MAKE_HEADER(c);
+
+            /* Add games if not collapsed */
+            if (!app->cat_collapsed[c]) {
+                for (int i = 0; i < NUM_GAMES; i++) {
+                    if (strcmp(GAMES[i].category, CATEGORIES[c]) == 0)
+                        app->filtered[app->filter_count++] = i;
+                }
+            }
+        }
+    } else {
+        /* Filtered view: flat list (single category or search active) */
+        const char *cat = (app->cat_index == 0) ? NULL : CATEGORIES[app->cat_index];
+
+        for (int i = 0; i < NUM_GAMES; i++) {
+            if (cat && strcmp(GAMES[i].category, cat) != 0) continue;
+            if (app->search_len > 0 && !search_matches(GAMES[i].name, app->search, app->search_len))
+                continue;
+            app->filtered[app->filter_count++] = i;
+        }
     }
 
     /* Clamp selection */
@@ -50,7 +75,7 @@ void app_init(App *app) {
     app->cloned = malloc((size_t)NUM_GAMES * sizeof(int));
     app->deps_satisfied = malloc((size_t)NUM_GAMES * sizeof(int));
     app->install_methods = calloc((size_t)NUM_GAMES, sizeof(char *));
-    app->filtered = malloc((size_t)NUM_GAMES * sizeof(int));
+    app->filtered = malloc((size_t)(NUM_GAMES + NUM_CATEGORIES) * sizeof(int));
     app->toolchains = toolchains_detect();
     app->child.pid = 0;
     app->child.pipe_fd = -1;
@@ -168,6 +193,8 @@ static Color category_color(const char *category) {
     if (strcmp(category, "Shooter") == 0)   return (Color){200,80,80};
     if (strcmp(category, "Racing") == 0)    return (Color){200,160,60};
     if (strcmp(category, "Simulation") == 0) return (Color){80,160,200};
+    if (strcmp(category, "Platformer") == 0) return (Color){100,200,100};
+    if (strcmp(category, "Stealth") == 0)    return (Color){120,120,180};
     return CLR_ICON;
 }
 
@@ -235,42 +262,79 @@ static void render_game_list(Screen *s, App *app, int x, int y, int w, int h) {
     }
 
     for (int i = 0; i < list_h && scroll + i < total; i++) {
-        int gi = app->filtered[scroll + i]; /* real game index */
-        const Game *g = &GAMES[gi];
-        int supported = game_supports_platform(g);
-        int cloned = app->cloned[gi];
+        int val = app->filtered[scroll + i];
         int row = y + 1 + i;
         int is_sel = (scroll + i == app->selected);
 
-        Color bg = is_sel ? CLR_SELBG : CLR_BG;
-        scr_fill(s, x + 1, row, w - 2, 1, bg);
+        if (IS_HEADER(val)) {
+            /* ── Category header row ─────────────────────── */
+            int ci = HEADER_CAT(val);
+            int collapsed = app->cat_collapsed[ci];
+            Color bg = is_sel ? CLR_SELBG : CLR_BG;
+            scr_fill(s, x + 1, row, w - 2, 1, bg);
 
-        /* Status dot: ● ○ ◐ × */
-        uint32_t dot;
-        Color dot_color;
-        if (!supported)              { dot = 0x00D7; dot_color = CLR_DARK; }     /* × */
-        else if (app->installed[gi]) { dot = 0x25CF; dot_color = CLR_GREEN; }    /* ● */
-        else if (cloned)             { dot = 0x25D0; dot_color = CLR_YELLOW; }   /* ◐ */
-        else                         { dot = 0x25CB; dot_color = (Color){80,80,100}; } /* ○ */
+            int cx = x + 1;
+            scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+            /* ▾ expanded, ▸ collapsed */
+            uint32_t tri = collapsed ? 0x25B8 : 0x25BE;
+            Color cat_clr = category_color(CATEGORIES[ci]);
+            scr_put(s, cx++, row, tri, cat_clr, bg, 1);
+            scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
 
-        int cx = x + 1;
-        scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
-        scr_put(s, cx++, row, dot, dot_color, bg, 0);
-        scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+            /* Category name */
+            int name_max = w - 2 - (cx - x - 1) - 6;
+            scr_str_n(s, cx, row, CATEGORIES[ci], name_max, cat_clr, bg, 1);
 
-        /* Name (no more icon brackets) */
-        Color name_color;
-        if (!supported)              name_color = CLR_DARK;
-        else if (app->installed[gi]) name_color = is_sel ? CLR_CYAN : CLR_WHITE;
-        else if (cloned)             name_color = CLR_YELLOW;
-        else                         name_color = (Color){140,140,150};
+            /* Game count at right */
+            int count = 0;
+            for (int g = 0; g < NUM_GAMES; g++)
+                if (strcmp(GAMES[g].category, CATEGORIES[ci]) == 0) count++;
+            char cbuf[8];
+            snprintf(cbuf, sizeof(cbuf), "(%d)", count);
+            int clen = (int)strlen(cbuf);
+            scr_str_n(s, x + w - 2 - clen, row, cbuf, clen, CLR_HINT, bg, 0);
+        } else {
+            /* ── Game row ────────────────────────────────── */
+            int gi = val;
+            const Game *g = &GAMES[gi];
+            int supported = game_supports_platform(g);
+            int cloned = app->cloned[gi];
 
-        int name_max = w - 2 - (cx - x - 1) - 2; /* leave room for arrow */
-        scr_str_n(s, cx, row, g->name, name_max, name_color, bg, is_sel);
+            Color bg = is_sel ? CLR_SELBG : CLR_BG;
+            scr_fill(s, x + 1, row, w - 2, 1, bg);
 
-        /* Selection arrow at right edge */
-        if (is_sel) {
-            scr_put(s, x + w - 2, row, 0x25B8, CLR_CYAN, bg, 0); /* ▸ */
+            /* Status dot: ● ○ ◐ × */
+            uint32_t dot;
+            Color dot_color;
+            if (!supported)              { dot = 0x00D7; dot_color = CLR_DARK; }     /* × */
+            else if (app->installed[gi]) { dot = 0x25CF; dot_color = CLR_GREEN; }    /* ● */
+            else if (cloned)             { dot = 0x25D0; dot_color = CLR_YELLOW; }   /* ◐ */
+            else                         { dot = 0x25CB; dot_color = (Color){80,80,100}; } /* ○ */
+
+            int cx = x + 1;
+            /* Extra indent when in grouped (ALL) view */
+            if (app->cat_index == 0 && app->search_len == 0) {
+                scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+                scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+            }
+            scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+            scr_put(s, cx++, row, dot, dot_color, bg, 0);
+            scr_put(s, cx++, row, ' ', CLR_WHITE, bg, 0);
+
+            /* Name */
+            Color name_color;
+            if (!supported)              name_color = CLR_DARK;
+            else if (app->installed[gi]) name_color = is_sel ? CLR_CYAN : CLR_WHITE;
+            else if (cloned)             name_color = CLR_YELLOW;
+            else                         name_color = (Color){140,140,150};
+
+            int name_max = w - 2 - (cx - x - 1) - 2; /* leave room for arrow */
+            scr_str_n(s, cx, row, g->name, name_max, name_color, bg, is_sel);
+
+            /* Selection arrow at right edge */
+            if (is_sel) {
+                scr_put(s, x + w - 2, row, 0x25B8, CLR_CYAN, bg, 0); /* ▸ */
+            }
         }
     }
 }
@@ -293,6 +357,25 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
 
     if (app->filter_count == 0) return;
     int gi = app->filtered[app->selected];
+    if (IS_HEADER(gi)) {
+        /* Show category summary */
+        int ci = HEADER_CAT(gi);
+        int ix = x + 2, iw = w - 4, row = y + 2;
+        Color cat_clr = category_color(CATEGORIES[ci]);
+        scr_str_n(s, ix, row, CATEGORIES[ci], iw, cat_clr, CLR_BG, 1);
+        row += 2;
+        int count = 0;
+        for (int g = 0; g < NUM_GAMES; g++)
+            if (strcmp(GAMES[g].category, CATEGORIES[ci]) == 0) count++;
+        char info[64];
+        snprintf(info, sizeof(info), "%d game%s", count, count == 1 ? "" : "s");
+        scr_str_n(s, ix, row, info, iw, CLR_DIMWHITE, CLR_BG, 0);
+        row += 2;
+        scr_str_n(s, ix, row, "Enter", 5, CLR_CYAN, CLR_BG, 1);
+        scr_str_n(s, ix + 6, row, app->cat_collapsed[ci] ? "to expand" : "to collapse",
+                  iw - 6, CLR_HINT, CLR_BG, 0);
+        return;
+    }
     const Game *g = &GAMES[gi];
     int installed = app->installed[gi];
     int cloned = app->cloned[gi];
@@ -589,6 +672,7 @@ static void render_controls(Screen *s, App *app, int x, int y, int w, int h) {
 
     if (app->filter_count == 0) return;
     int gi = app->filtered[app->selected];
+    if (IS_HEADER(gi)) return;
     const Game *g = &GAMES[gi];
 
     int ix = x + 2;
@@ -779,6 +863,7 @@ static void render_footer(Screen *s, App *app, int y) {
             {"i", "install", CLR_YELLOW},
             {"d", "remove", CLR_RED},
             {"c", "controls", (Color){220,180,100}},
+            {"-/=", "fold", CLR_HINT},
             {NULL, NULL, CLR_NONE},
         };
         for (int ki = 0; keys[ki].key; ki++) {

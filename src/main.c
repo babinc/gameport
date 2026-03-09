@@ -448,6 +448,13 @@ int main(void) {
             case KEY_ENTER: {
                 if (app.filter_count == 0) break;
                 int gi = app.filtered[app.selected];
+                /* Toggle category header */
+                if (IS_HEADER(gi)) {
+                    int ci = HEADER_CAT(gi);
+                    app.cat_collapsed[ci] = !app.cat_collapsed[ci];
+                    app_rebuild_filter(&app);
+                    break;
+                }
                 app.active_game = gi;
                 const Game *g = &GAMES[gi];
                 if (app.cloned[gi]) {
@@ -546,7 +553,7 @@ int main(void) {
                     app_rebuild_filter(&app);
                     app_set_message(&app, "Refreshed!", 1);
                 } else if (key.ch == 'c') {
-                    if (app.filter_count > 0) {
+                    if (app.filter_count > 0 && !IS_HEADER(app.filtered[app.selected])) {
                         app.mode = MODE_CONTROLS;
                         app.panel_scroll = 0;
                     }
@@ -555,10 +562,21 @@ int main(void) {
                         app.mode = MODE_VIEWLOG;
                         app.log_scroll = 0;
                     }
+                } else if (key.ch == '-') {
+                    /* Collapse all categories */
+                    for (int ci = 1; ci < NUM_CATEGORIES; ci++)
+                        app.cat_collapsed[ci] = 1;
+                    app_rebuild_filter(&app);
+                } else if (key.ch == '=' || key.ch == '+') {
+                    /* Expand all categories */
+                    for (int ci = 1; ci < NUM_CATEGORIES; ci++)
+                        app.cat_collapsed[ci] = 0;
+                    app_rebuild_filter(&app);
                 } else if (key.ch == 'i' || key.ch == 'd') {
                     if (app.filter_count == 0) break;
-                    int installing = (key.ch == 'i');
                     int idx = app.filtered[app.selected];
+                    if (IS_HEADER(idx)) break;
+                    int installing = (key.ch == 'i');
                     app.active_game = idx;
                     const Game *g = &GAMES[idx];
                     const Source *src = default_source(g);
