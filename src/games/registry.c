@@ -20,6 +20,9 @@ const Game *game_thedarkmod(void);
 const Game *game_brogue(void);
 const Game *game_cataclysm_dda(void);
 const Game *game_nethack(void);
+const Game *game_ttyper(void);
+const Game *game_wesnoth(void);
+const Game *game_endless_sky(void);
 
 typedef const Game *(*GameFn)(void);
 
@@ -43,6 +46,9 @@ static const GameFn game_fns[] = {
     game_brogue,
     game_cataclysm_dda,
     game_nethack,
+    game_ttyper,
+    game_wesnoth,
+    game_endless_sky,
 };
 
 #define MAX_GAMES 32
