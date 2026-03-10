@@ -108,7 +108,7 @@ void plat_term_suspend(void) {
 
 void plat_term_resume(void) {
     set_raw_mode();
-    plat_term_write(TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_ON_LEN);
+    plat_term_write(TERM_ALT_SCREEN_ON "\033[2J", TERM_ALT_SCREEN_ON_LEN + 4);
 }
 
 void plat_term_get_size(int *w, int *h) {
