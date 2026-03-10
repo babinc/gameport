@@ -13,7 +13,7 @@ static const char *play[] = {"./supertux2", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~90 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/SuperTux/supertux/releases/download/v0.6.3/SuperTux-v0.6.3.glibc2.29-x86_64.AppImage",
     .dir = "supertux",
     .bin = "supertux2",
@@ -26,7 +26,7 @@ static const Game game_data = {
     .keys = keys, .category = "Platformer",
     .engine = "SDL2 (OpenGL)", .website = "https://www.supertux.org/",
     .repo = "https://github.com/SuperTux/supertux",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

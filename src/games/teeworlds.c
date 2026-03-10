@@ -19,7 +19,7 @@ static const char *play_win[] = {"teeworlds.exe", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download tar.gz (~10 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/teeworlds/teeworlds/releases/download/0.7.5/teeworlds-0.7.5-linux_x86_64.tar.gz",
     .dir = "teeworlds",
     .archive_type = "tar.gz",
@@ -28,7 +28,7 @@ static const Source sources[] = {{
 }, {
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download Windows zip (~10 MB)",
-    .platforms = PLATFORMS_WINDOWS,
+    .platforms = PLAT_WINDOWS,
     .url = "https://github.com/teeworlds/teeworlds/releases/download/0.7.5/teeworlds-0.7.5-win64.zip",
     .dir = "teeworlds",
     .archive_type = "zip",
@@ -42,7 +42,7 @@ static const Game game_data = {
     .keys = keys, .category = "Shooter",
     .engine = "SDL2 (OpenGL)", .website = "https://www.teeworlds.com/",
     .repo = "https://github.com/teeworlds/teeworlds",
-    .platforms = PLATFORMS_LINUX_WIN,
+    .platforms = PLAT_LINUX | PLAT_WINDOWS,
     .sources = sources, .num_sources = 2,
 };
 

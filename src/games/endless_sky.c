@@ -57,7 +57,7 @@ static const Game game_data = {
     .keys = keys, .category = "Simulation",
     .engine = "SDL2 (OpenGL)", .website = "https://endless-sky.github.io/",
     .repo = "https://github.com/endless-sky/endless-sky",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
+    .platforms = PLAT_LINUX | PLAT_MACOS, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

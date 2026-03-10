@@ -35,7 +35,7 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/hedgewars/hw.git",
     .dir = "hedgewars", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
@@ -48,7 +48,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "SDL2 (Free Pascal)", .website = "https://www.hedgewars.org/",
     .repo = "https://github.com/hedgewars/hw",
-    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_platform_deps = 1,
+    .platforms = PLAT_LINUX, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

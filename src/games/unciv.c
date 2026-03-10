@@ -18,7 +18,7 @@ static const char *play_win[] = {".\\Unciv.exe", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download Linux zip (~50 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/yairm210/Unciv/releases/download/4.19.17-patch1/Unciv-Linux64.zip",
     .dir = "unciv",
     .archive_type = "zip",
@@ -27,7 +27,7 @@ static const Source sources[] = {{
 }, {
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download Windows zip (~50 MB)",
-    .platforms = PLATFORMS_WINDOWS,
+    .platforms = PLAT_WINDOWS,
     .url = "https://github.com/yairm210/Unciv/releases/download/4.19.17-patch1/Unciv-Windows64.zip",
     .dir = "unciv",
     .archive_type = "zip",
@@ -40,7 +40,7 @@ static const Game game_data = {
     .desc = "An open-source remake of Civilization V with pixel art. Build empires, research technology, wage war, and pursue victory across multiple conditions. Mod support and multiplayer.",
     .keys = keys, .category = "Strategy",
     .engine = "libGDX", .repo = "https://github.com/yairm210/Unciv",
-    .platforms = PLATFORMS_LINUX_WIN,
+    .platforms = PLAT_LINUX | PLAT_WINDOWS,
     .sources = sources, .num_sources = 2,
 };
 

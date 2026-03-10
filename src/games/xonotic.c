@@ -19,7 +19,7 @@ static const char *play[] = {"./xonotic-linux-sdl.sh", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download release (~1.2 GB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://dl.xonotic.org/xonotic-0.8.6.zip",
     .dir = "xonotic", .archive_type = "zip",
     .bin = "xonotic-linux-sdl.sh",
@@ -32,7 +32,7 @@ static const Game game_data = {
     .keys = keys, .category = "Shooter",
     .engine = "DarkPlaces", .website = "https://xonotic.org/",
     .repo = "https://gitlab.com/xonotic/xonotic",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

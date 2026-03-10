@@ -20,7 +20,7 @@ static const char *play_win[] = {".\\ClassiCube.exe", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download tar.gz (~5 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://cdn.classicube.net/client/release/nix64/ClassiCube.tar.gz",
     .dir = "classicube",
     .archive_type = "tar.gz",
@@ -29,7 +29,7 @@ static const Source sources[] = {{
 }, {
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download Windows exe (~5 MB)",
-    .platforms = PLATFORMS_WINDOWS,
+    .platforms = PLAT_WINDOWS,
     .url = "https://cdn.classicube.net/client/release/win64/ClassiCube.64.exe",
     .dir = "classicube",
     .bin = "ClassiCube.exe",
@@ -42,7 +42,7 @@ static const Game game_data = {
     .keys = keys, .category = "Action",
     .engine = "OpenGL (custom C)", .website = "https://www.classicube.net/",
     .repo = "https://github.com/ClassiCube/ClassiCube",
-    .platforms = PLATFORMS_LINUX_WIN,
+    .platforms = PLAT_LINUX | PLAT_WINDOWS,
     .sources = sources, .num_sources = 2,
 };
 

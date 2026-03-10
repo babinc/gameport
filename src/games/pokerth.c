@@ -16,7 +16,7 @@ static const char *play[] = {"./pokerth", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~30 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/pokerth/pokerth/releases/download/v2.0.6/PokerTH-2.0.6.AppImage",
     .dir = "pokerth",
     .bin = "pokerth",
@@ -29,7 +29,7 @@ static const Game game_data = {
     .keys = keys, .category = "Card",
     .engine = "Qt/SDL", .website = "https://www.pokerth.net/",
     .repo = "https://github.com/pokerth/pokerth",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

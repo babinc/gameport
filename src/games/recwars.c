@@ -29,7 +29,7 @@ static const Game game_data = {
     .desc = "Top-down tank deathmatch. Drive tanks, hovercraft, or hummers and blast opponents with 8 weapons. Free-for-all, team war, or capture the cow. Graphical window.",
     .keys = keys, .category = "Action",
     .engine = "macroquad", .repo = "https://crates.io/crates/rec-wars",
-    .sources = sources, .num_sources = 1,
+    .platforms = PLAT_ALL, .sources = sources, .num_sources = 1,
 };
 
 const Game *game_recwars(void) { return &game_data; }

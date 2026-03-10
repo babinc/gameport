@@ -67,7 +67,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "SDL2 (OpenGL)", .website = "https://www.widelands.org/",
     .repo = "https://github.com/widelands/widelands",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
+    .platforms = PLAT_LINUX | PLAT_MACOS, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

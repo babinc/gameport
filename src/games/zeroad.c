@@ -20,7 +20,7 @@ static const char *play[] = {"./zeroad", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~1.7 GB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://releases.wildfiregames.com/0ad-0.28.0-x86_64.AppImage",
     .dir = "zeroad",
     .bin = "zeroad",
@@ -33,7 +33,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "Pyrogenesis", .website = "https://play0ad.com/",
     .repo = "https://github.com/0ad/0ad",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

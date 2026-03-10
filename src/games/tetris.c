@@ -23,7 +23,7 @@ static const Game game_data = {
     .desc = "Falling block puzzle. Rotate and position tetrominoes to fill complete rows. Completed rows disappear. Game ends when blocks stack to the top.",
     .keys = keys, .category = "Action",
     .engine = "ratatui", .repo = "https://crates.io/crates/sxtetris",
-    .sources = sources, .num_sources = 1,
+    .platforms = PLAT_ALL, .sources = sources, .num_sources = 1,
 };
 
 const Game *game_tetris(void) { return &game_data; }

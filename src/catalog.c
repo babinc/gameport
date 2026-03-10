@@ -1,13 +1,8 @@
 #include "catalog.h"
 #include <string.h>
 
-/* ── Common platform arrays ──────────────────────────────────── */
+/* ── Common arrays ────────────────────────────────────────────── */
 
-const char *PLATFORMS_LINUX[]     = {"linux", NULL};
-const char *PLATFORMS_WINDOWS[]  = {"windows", NULL};
-const char *PLATFORMS_LINUX_WIN[] = {"linux", "windows", NULL};
-const char *PLATFORMS_POSIX[]    = {"linux", "macos", NULL};
-const char *PLATFORMS_ALL[]      = {"linux", "macos", "windows", NULL};
 const char *MAC_XCODE_INSTALL[] = {"xcode-select", "--install", NULL};
 const char *MAC_XCODE_CHECK[]   = {"xcode-select", "-p", NULL};
 
@@ -34,13 +29,20 @@ const char *current_platform(void) {
 #endif
 }
 
-int game_supports_platform(const Game *g) {
-    if (!g->platforms) return 1;
-    const char *plat = current_platform();
-    for (int i = 0; g->platforms[i]; i++) {
-        if (strcmp(g->platforms[i], plat) == 0) return 1;
-    }
+int current_platform_bit(void) {
+#if defined(__linux__)
+    return PLAT_LINUX;
+#elif defined(_WIN32)
+    return PLAT_WINDOWS;
+#elif defined(__APPLE__)
+    return PLAT_MACOS;
+#else
     return 0;
+#endif
+}
+
+int game_supports_platform(const Game *g) {
+    return (g->platforms & current_platform_bit()) != 0;
 }
 
 const PlatformDeps *platform_deps_for_current(const Game *g) {
@@ -53,12 +55,8 @@ const PlatformDeps *platform_deps_for_current(const Game *g) {
 }
 
 static int source_supports_platform(const Source *s) {
-    if (!s->platforms) return 1;
-    const char *plat = current_platform();
-    for (int i = 0; s->platforms[i]; i++) {
-        if (strcmp(s->platforms[i], plat) == 0) return 1;
-    }
-    return 0;
+    if (!s->platforms) return 1; /* 0 = not specified, inherit from game */
+    return (s->platforms & current_platform_bit()) != 0;
 }
 
 const Source *default_source(const Game *g) {

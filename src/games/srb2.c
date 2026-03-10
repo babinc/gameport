@@ -42,7 +42,8 @@ static const char *build[] = {
     "fi",
     NULL
 };
-static const char *play[] = {"./bin/lsdl2srb2", NULL};
+static const char *play_linux[] = {"./bin/lsdl2srb2", NULL};
+static const char *play_win[] = {"srb2win.exe", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "libsdl2-dev", "libsdl2-mixer-dev",
@@ -56,13 +57,25 @@ static const PlatformDeps deps[] = {
       linux_install, linux_check, 1 },
 };
 
-static const Source sources[] = {{
+static const Source sources[] = {
+{
     .method = ACQUIRE_GIT, .label = "Build from source (git + make)",
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/STJr/SRB2.git",
     .dir = "SRB2", .shallow = 1,
-    .build_cmd = build, .play_cmd = play,
+    .build_cmd = build, .play_cmd = play_linux,
     .bin = "lsdl2srb2",
-}};
+},
+{
+    .method = ACQUIRE_DOWNLOAD,
+    .label = "Download zip (~130 MB)",
+    .platforms = PLAT_WINDOWS,
+    .url = "https://github.com/STJr/SRB2/releases/download/SRB2_release_2.2.15/SRB2-v2215-Full.zip",
+    .dir = "SRB2", .archive_type = "zip",
+    .bin = "srb2win.exe",
+    .play_cmd = play_win,
+},
+};
 
 static const Game game_data = {
     .name = "Sonic Robo Blast 2", .icon = "B",
@@ -70,8 +83,8 @@ static const Game game_data = {
     .keys = keys, .category = "Platformer",
     .engine = "Doom (SDL2)", .website = "https://www.srb2.org/",
     .repo = "https://github.com/STJr/SRB2",
-    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_platform_deps = 1,
-    .sources = sources, .num_sources = 1,
+    .platforms = PLAT_LINUX | PLAT_WINDOWS, .platform_deps = deps, .num_platform_deps = 1,
+    .sources = sources, .num_sources = 2,
 };
 
 const Game *game_srb2(void) { return &game_data; }

@@ -38,7 +38,7 @@ static const Game game_data = {
     .keys = keys, .category = "Puzzle",
     .engine = "ncurses", .website = "https://github.com/plibither8/2048.cpp",
     .repo = "https://github.com/plibither8/2048.cpp",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
+    .platforms = PLAT_LINUX | PLAT_MACOS, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

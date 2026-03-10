@@ -39,7 +39,7 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + meson)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/freeciv/freeciv.git",
     .dir = "freeciv", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
@@ -52,7 +52,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "GTK4 / SDL2", .website = "https://www.freeciv.org/",
     .repo = "https://github.com/freeciv/freeciv",
-    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_platform_deps = 1,
+    .platforms = PLAT_LINUX, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

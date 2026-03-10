@@ -30,7 +30,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "Arc (libGDX)", .website = "https://mindustrygame.github.io/",
     .repo = "https://github.com/Anuken/Mindustry",
-    .sources = sources, .num_sources = 1,
+    .platforms = PLAT_ALL, .sources = sources, .num_sources = 1,
 };
 
 const Game *game_mindustry(void) { return &game_data; }

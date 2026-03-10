@@ -20,7 +20,7 @@ static const Game game_data = {
     .desc = "Terminal-based typing test. Practice touch typing with random English words, see your WPM and accuracy in real time. Supports custom word lists and languages.",
     .keys = keys, .category = "Typing",
     .engine = "ratatui", .repo = "https://github.com/max-niederman/ttyper",
-    .sources = sources, .num_sources = 1,
+    .platforms = PLAT_ALL, .sources = sources, .num_sources = 1,
 };
 
 const Game *game_ttyper(void) { return &game_data; }

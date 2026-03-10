@@ -16,7 +16,7 @@ static const char *play[] = {"./speed-dreams", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~500 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://files.speed-dreams.net/public/speed-dreams-v2.4.2-x86_64.AppImage",
     .dir = "speed-dreams",
     .bin = "speed-dreams",
@@ -29,7 +29,7 @@ static const Game game_data = {
     .keys = keys, .category = "Racing",
     .engine = "TORCS (OpenGL)", .website = "https://www.speed-dreams.net/",
     .repo = "https://forge.a-lec.org/speed-dreams/speed-dreams-code",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

@@ -52,7 +52,7 @@ static const Game game_data = {
     .keys = keys, .category = "Roguelike",
     .engine = "ncurses", .website = "https://rephial.org/",
     .repo = "https://github.com/angband/angband",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
+    .platforms = PLAT_LINUX | PLAT_MACOS, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

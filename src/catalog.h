@@ -7,6 +7,14 @@
 typedef enum { ACQUIRE_CARGO, ACQUIRE_GIT, ACQUIRE_DOWNLOAD } AcquireMethod;
 const char *acquire_str(AcquireMethod m);
 
+/* ── Platform flags (bitfield) ───────────────────────────────── */
+enum {
+    PLAT_LINUX   = 1,
+    PLAT_MACOS   = 2,
+    PLAT_WINDOWS = 4,
+    PLAT_ALL     = PLAT_LINUX | PLAT_MACOS | PLAT_WINDOWS,
+};
+
 /* ── Platform deps ────────────────────────────────────────────── */
 typedef struct {
     const char *os;             /* "linux", "windows", "macos" */
@@ -20,7 +28,7 @@ typedef struct {
 typedef struct {
     AcquireMethod method;
     const char *label;          /* shown in UI */
-    const char **platforms;     /* NULL-terminated, NULL = all */
+    int platforms;              /* PLAT_* bitfield */
 
     /* Acquire (git clone or download) */
     const char *url;            /* git URL or download URL */
@@ -49,7 +57,7 @@ typedef struct {
     const char *engine;
     const char *website;        /* game homepage URL, NULL if none */
     const char *repo;
-    const char **platforms;     /* NULL-terminated, NULL = all */
+    int platforms;              /* PLAT_* bitfield */
     const PlatformDeps *platform_deps;
     int num_platform_deps;
     const Source *sources;
@@ -61,17 +69,13 @@ extern Game GAMES[];
 extern int  NUM_GAMES;
 void catalog_init(void);
 
-/* ── Common platform arrays ──────────────────────────────────── */
-extern const char *PLATFORMS_LINUX[];       /* {"linux", NULL} */
-extern const char *PLATFORMS_WINDOWS[];     /* {"windows", NULL} */
-extern const char *PLATFORMS_LINUX_WIN[];   /* {"linux", "windows", NULL} */
-extern const char *PLATFORMS_POSIX[];       /* {"linux", "macos", NULL} */
-extern const char *PLATFORMS_ALL[];         /* {"linux", "macos", "windows", NULL} */
+/* ── Common arrays ───────────────────────────────────────────── */
 extern const char *MAC_XCODE_INSTALL[];     /* {"xcode-select", "--install", NULL} */
 extern const char *MAC_XCODE_CHECK[];       /* {"xcode-select", "-p", NULL} */
 
 /* ── Helpers ──────────────────────────────────────────────────── */
-const char     *current_platform(void);
+const char     *current_platform(void);     /* string: "linux", "macos", "windows" */
+int             current_platform_bit(void); /* PLAT_LINUX, PLAT_MACOS, or PLAT_WINDOWS */
 int             game_supports_platform(const Game *g);
 const PlatformDeps *platform_deps_for_current(const Game *g);
 const Source   *default_source(const Game *g);

@@ -56,7 +56,7 @@ static const Game game_data = {
     .keys = keys, .category = "Shooter",
     .engine = "Cube 2 (SDL2)", .website = "https://www.redeclipse.net/",
     .repo = "https://github.com/redeclipse/base",
-    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_platform_deps = 1,
+    .platforms = PLAT_LINUX, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

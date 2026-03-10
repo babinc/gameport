@@ -80,7 +80,7 @@ static const Game game_data = {
     .keys = keys, .category = "Stealth",
     .engine = "id Tech 4 (modified)", .website = "https://www.thedarkmod.com/",
     .repo = "https://github.com/stgatilov/darkmod_src",
-    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_platform_deps = 1,
+    .platforms = PLAT_LINUX, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

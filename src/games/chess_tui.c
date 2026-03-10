@@ -23,7 +23,7 @@ static const Game game_data = {
     .desc = "Full chess in the terminal. Play vs a friend locally, against a UCI engine (Stockfish), or online via Lichess. Supports multiple board skins.",
     .keys = keys, .category = "Strategy",
     .engine = "ratatui", .repo = "https://crates.io/crates/chess-tui",
-    .sources = sources, .num_sources = 1,
+    .platforms = PLAT_ALL, .sources = sources, .num_sources = 1,
 };
 
 const Game *game_chess_tui(void) { return &game_data; }

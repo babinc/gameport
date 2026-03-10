@@ -18,17 +18,12 @@ const int NUM_CATEGORIES = sizeof(CATEGORIES) / sizeof(CATEGORIES[0]);
 
 /* Platform filter options */
 static const char *PLAT_LABELS[] = {"All", "Linux", "macOS", "Windows"};
-static const char *PLAT_IDS[]    = {NULL,  "linux", "macos", "windows"};
+static const int   PLAT_BITS[]   = {0,     PLAT_LINUX, PLAT_MACOS, PLAT_WINDOWS};
 const int NUM_PLAT_FILTERS = sizeof(PLAT_LABELS) / sizeof(PLAT_LABELS[0]);
 
 static int game_matches_plat_filter(const Game *g, int plat_filter) {
     if (plat_filter == 0) return 1;  /* "All" */
-    const char *plat = PLAT_IDS[plat_filter];
-    if (!g->platforms) return 1;     /* NULL = supports all */
-    for (int i = 0; g->platforms[i]; i++) {
-        if (strcmp(g->platforms[i], plat) == 0) return 1;
-    }
-    return 0;
+    return (g->platforms & PLAT_BITS[plat_filter]) != 0;
 }
 
 static int search_matches(const char *name, const char *search, int search_len) {
@@ -585,13 +580,16 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     if (row < y + h - 1) {
         int cx = ix;
         cx += scr_str_n(s, cx, row, "Platform  ", iw, CLR_LABEL, CLR_BG, 0);
-        if (!g->platforms) {
-            scr_str_n(s, cx, row, "all", iw - (cx - ix), CLR_GREEN, CLR_BG, 0);
-        } else {
+        {
             char platbuf[128] = "";
-            for (int i = 0; g->platforms[i]; i++) {
-                if (i > 0) strncat(platbuf, ", ", sizeof(platbuf) - strlen(platbuf) - 1);
-                strncat(platbuf, g->platforms[i], sizeof(platbuf) - strlen(platbuf) - 1);
+            if (g->platforms & PLAT_LINUX) strcat(platbuf, "linux");
+            if (g->platforms & PLAT_MACOS) {
+                if (platbuf[0]) strcat(platbuf, ", ");
+                strcat(platbuf, "macos");
+            }
+            if (g->platforms & PLAT_WINDOWS) {
+                if (platbuf[0]) strcat(platbuf, ", ");
+                strcat(platbuf, "windows");
             }
             int pcx = cx;
             pcx += scr_str_n(s, pcx, row, platbuf, iw - (pcx - ix),

@@ -14,7 +14,7 @@ static const char *play[] = {"./armagetron", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~20 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://launchpad.net/armagetronad/0.2.9/0.2.9.2.5/+download/ArmagetronAdvanced.AppImage",
     .dir = "armagetron",
     .bin = "armagetron",
@@ -27,7 +27,7 @@ static const Game game_data = {
     .keys = keys, .category = "Action",
     .engine = "OpenGL (custom)", .website = "https://www.armagetronad.org/",
     .repo = "https://gitlab.com/armagetronad/armagetronad",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

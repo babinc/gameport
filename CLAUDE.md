@@ -62,17 +62,14 @@ const Game *game_<name>(void) { return &game_data; }
 
 ### Shared Constants (catalog.h/c)
 
-Use these instead of defining local arrays in game files:
-- `PLATFORMS_LINUX[]` — `{"linux", NULL}`
-- `PLATFORMS_POSIX[]` — `{"linux", "macos", NULL}`
-- `PLATFORMS_ALL[]` — `{"linux", "macos", "windows", NULL}`
 - `MAC_XCODE_INSTALL[]` / `MAC_XCODE_CHECK[]` — Xcode CLI tools
 
-### Platform Filtering
+### Platform Flags (bitfield enum)
 
-- `Source.platforms` — NULL means all platforms, otherwise NULL-terminated string array
-- `Game.platforms` — same semantics
-- `game_supports_platform()` checks against runtime platform
+- `PLAT_LINUX` (1), `PLAT_MACOS` (2), `PLAT_WINDOWS` (4), `PLAT_ALL` (7)
+- `Game.platforms` — bitfield, e.g. `PLAT_LINUX | PLAT_WINDOWS`. Every game must set this explicitly.
+- `Source.platforms` — bitfield. 0 means "inherit from game" (single-source games). Set explicitly for multi-source games with per-platform downloads.
+- `game_supports_platform()` checks `g->platforms & current_platform_bit()`
 - `game_matches_plat_filter()` checks against user-selected UI filter
 - Use `source_cwd()` helper in main.c for computing game working directory
 
@@ -92,7 +89,7 @@ All other engines use captured `child_start` (output panel).
 ### Must-Do
 
 - **Always add `default:` or handle all enum cases** in switch statements on `AcquireMethod` — the compiler warns on `-Wall` but missing a case silently falls through
-- **Use shared platform constants** (`PLATFORMS_LINUX`, `PLATFORMS_POSIX`, etc.) instead of defining `static const char *platforms[]` in game files
+- **Use platform bitfield flags** (`PLAT_LINUX`, `PLAT_MACOS`, `PLAT_WINDOWS`, `PLAT_ALL`) — every Game must set `.platforms` explicitly
 - **Use `source_cwd()`** helper instead of inlining the `games_dir()` + `dir` pattern
 - **Expose counts via ui.h** (`NUM_PLAT_FILTERS`, `NUM_CATEGORIES`) — never hardcode magic numbers for array sizes or modulo cycling
 - **Cache computed values in App struct** rather than recomputing in render functions (render runs every 100ms)

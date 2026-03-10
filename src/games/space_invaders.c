@@ -9,7 +9,7 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *win_platforms[] = {"windows", NULL};
+
 
 /* ── POSIX build (bash) ──────────────────────────────────────── */
 
@@ -78,7 +78,7 @@ static const PlatformDeps deps[] = {
 static const Source sources[] = {
     {
         .method = ACQUIRE_GIT, .label = "Build from source (cmake + raylib)",
-        .platforms = PLATFORMS_POSIX,
+        .platforms = PLAT_LINUX | PLAT_MACOS,
         .url = "https://github.com/raysan5/raylib-games.git",
         .dir = "space_invaders", .shallow = 1,
         .build_cmd = build, .play_cmd = play,
@@ -86,7 +86,7 @@ static const Source sources[] = {
     },
     {
         .method = ACQUIRE_GIT, .label = "Build from source (cmake + raylib)",
-        .platforms = win_platforms,
+        .platforms = PLAT_WINDOWS,
         .url = "https://github.com/raysan5/raylib-games.git",
         .dir = "space_invaders", .shallow = 1,
         .build_cmd = win_build, .play_cmd = win_play,
@@ -99,7 +99,7 @@ static const Game game_data = {
     .desc = "Classic Space Invaders in a graphical window. Shoot descending waves of aliens before they reach the bottom. Built with raylib -- pure C, zero dependencies.",
     .keys = keys, .category = "Action",
     .engine = "raylib", .repo = "https://github.com/raysan5/raylib-games",
-    .platforms = PLATFORMS_ALL, .platform_deps = deps, .num_platform_deps = 3,
+    .platforms = PLAT_ALL, .platform_deps = deps, .num_platform_deps = 3,
     .sources = sources, .num_sources = 2,
 };
 

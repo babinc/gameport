@@ -17,7 +17,7 @@ static const char *play[] = {"./bin/Shattered Pixel Dungeon", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download Linux zip (~40 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/00-Evan/shattered-pixel-dungeon/releases/download/v3.3.7/ShatteredPD-v3.3.7-Linux.zip",
     .dir = "shattered-pd",
     .archive_type = "zip",
@@ -31,7 +31,7 @@ static const Game game_data = {
     .keys = keys, .category = "Roguelike",
     .engine = "libGDX", .website = "https://shatteredpixel.com/",
     .repo = "https://github.com/00-Evan/shattered-pixel-dungeon",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

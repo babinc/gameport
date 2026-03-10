@@ -20,7 +20,7 @@ static const char *play[] = {"./pioneer", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~60 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/pioneerspacesim/pioneer/releases/download/20260203/Pioneer-x86_64.AppImage",
     .dir = "pioneer",
     .bin = "pioneer",
@@ -33,7 +33,7 @@ static const Game game_data = {
     .keys = keys, .category = "Simulation",
     .engine = "SDL2 (OpenGL)", .website = "https://pioneerspacesim.net/",
     .repo = "https://github.com/pioneerspacesim/pioneer",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

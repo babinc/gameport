@@ -21,7 +21,7 @@ static const char *play[] = {"./megaglest", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~70 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/MegaGlest/megaglest-source/releases/download/3.13.0/MegaGlest-3.13.0-x86_64.AppImage",
     .dir = "megaglest",
     .bin = "megaglest",
@@ -34,7 +34,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "OpenGL (custom)", .website = "https://megaglest.org/",
     .repo = "https://github.com/MegaGlest/megaglest-source",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

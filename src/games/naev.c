@@ -20,7 +20,7 @@ static const char *play[] = {"./naev", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~200 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://github.com/naev/naev/releases/download/v0.12.6/naev-0.12.6-linux-x86-64.AppImage",
     .dir = "naev",
     .bin = "naev",
@@ -33,7 +33,7 @@ static const Game game_data = {
     .keys = keys, .category = "Simulation",
     .engine = "SDL2 (OpenGL)", .website = "https://naev.org/",
     .repo = "https://github.com/naev/naev",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

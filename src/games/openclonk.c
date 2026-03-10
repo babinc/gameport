@@ -18,7 +18,7 @@ static const char *play[] = {"./openclonk", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download release (~120 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://www.openclonk.org/builds/release/8.1/openclonk-8.1-x64.tar.bz2",
     .dir = "openclonk", .archive_type = "tar.bz2",
     .bin = "openclonk",
@@ -31,7 +31,7 @@ static const Game game_data = {
     .keys = keys, .category = "Action",
     .engine = "OpenGL (custom)", .website = "https://www.openclonk.org/",
     .repo = "https://github.com/openclonk/openclonk",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

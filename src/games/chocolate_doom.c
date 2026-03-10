@@ -64,7 +64,7 @@ static const Game game_data = {
     .keys = keys, .category = "Shooter",
     .engine = "SDL2", .website = "https://www.chocolate-doom.org/",
     .repo = "https://github.com/chocolate-doom/chocolate-doom",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
+    .platforms = PLAT_LINUX | PLAT_MACOS, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

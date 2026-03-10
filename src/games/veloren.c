@@ -19,7 +19,7 @@ static const char *play[] = {"./airshipper", NULL};
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download Airshipper launcher (~30 MB)",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .url = "https://gitlab.com/veloren/airshipper/-/releases/permalink/latest/downloads/binaries/linux-client-x86_64.zip",
     .dir = "veloren", .archive_type = "zip",
     .bin = "airshipper",
@@ -32,7 +32,7 @@ static const Game game_data = {
     .keys = keys, .category = "RPG",
     .engine = "wgpu (Rust)", .website = "https://veloren.net/",
     .repo = "https://gitlab.com/veloren/veloren",
-    .platforms = PLATFORMS_LINUX,
+    .platforms = PLAT_LINUX,
     .sources = sources, .num_sources = 1,
 };
 

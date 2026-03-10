@@ -21,7 +21,7 @@ static const Game game_data = {
     .keys = keys, .category = "Puzzle",
     .engine = "ratatui", .website = "https://github.com/cpcloud/minesweep-rs",
     .repo = "https://github.com/cpcloud/minesweep-rs",
-    .sources = sources, .num_sources = 1,
+    .platforms = PLAT_ALL, .sources = sources, .num_sources = 1,
 };
 
 const Game *game_minesweeper(void) { return &game_data; }
