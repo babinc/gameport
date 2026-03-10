@@ -59,20 +59,65 @@ GamePort shows which tools you have as badges in the header.
 
 52 games across 12 categories:
 
-| Category | Games |
-|----------|-------|
-| Action | Tetris, RecWars, ClassiCube, Armagetron Advanced, Luanti |
-| Card | PokerTH |
-| Platformer | Sonic Robo Blast 2, SuperTux |
-| Puzzle | Minesweeper, 2048, Colobot |
-| Racing | SuperTuxKart, Speed Dreams |
-| Roguelike | Brogue CE, Cataclysm: DDA, NetHack, Dungeon Crawl Stone Soup, Angband |
-| RPG | Flare RPG, Veloren, The Ur-Quan Masters |
-| Shooter | Space Invaders, Asteroids, Anarch, Chocolate Doom, Red Eclipse, C-Dogs SDL, Teeworlds, Xonotic |
-| Simulation | OpenTTD, Endless Sky, Naev, Pioneer |
-| Stealth | The Dark Mod |
-| Strategy | Chess TUI, Warzone 2100, Widelands, Battle for Wesnoth, MegaGlest, 0 A.D., OpenRA: Red Alert, Unciv, FreeCiv, FreeOrion, Hedgewars, Mindustry, OpenClonk |
-| Typing | ttyper |
+<details>
+<summary><b>Action</b> (5)</summary>
+Tetris, RecWars, ClassiCube, Armagetron Advanced, Luanti
+</details>
+
+<details>
+<summary><b>Card</b> (1)</summary>
+PokerTH
+</details>
+
+<details>
+<summary><b>Platformer</b> (2)</summary>
+Sonic Robo Blast 2, SuperTux
+</details>
+
+<details>
+<summary><b>Puzzle</b> (3)</summary>
+Minesweeper, 2048, Colobot
+</details>
+
+<details>
+<summary><b>Racing</b> (2)</summary>
+SuperTuxKart, Speed Dreams
+</details>
+
+<details>
+<summary><b>Roguelike</b> (5)</summary>
+Brogue CE, Cataclysm: DDA, NetHack, Dungeon Crawl Stone Soup, Angband
+</details>
+
+<details>
+<summary><b>RPG</b> (3)</summary>
+Flare RPG, Veloren, The Ur-Quan Masters
+</details>
+
+<details>
+<summary><b>Shooter</b> (8)</summary>
+Space Invaders, Asteroids, Anarch, Chocolate Doom, Red Eclipse, C-Dogs SDL, Teeworlds, Xonotic
+</details>
+
+<details>
+<summary><b>Simulation</b> (4)</summary>
+OpenTTD, Endless Sky, Naev, Pioneer
+</details>
+
+<details>
+<summary><b>Stealth</b> (1)</summary>
+The Dark Mod
+</details>
+
+<details>
+<summary><b>Strategy</b> (13)</summary>
+Chess TUI, Warzone 2100, Widelands, Battle for Wesnoth, MegaGlest, 0 A.D., OpenRA: Red Alert, Unciv, FreeCiv, FreeOrion, Hedgewars, Mindustry, OpenClonk
+</details>
+
+<details>
+<summary><b>Typing</b> (1)</summary>
+ttyper
+</details>
 
 ## Platforms
 
