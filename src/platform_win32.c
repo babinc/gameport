@@ -463,6 +463,27 @@ char *plat_which(const char *bin) {
     return NULL;
 }
 
+long long plat_dir_size(const char *path) {
+    WIN32_FIND_DATAA fd;
+    char pattern[MAX_PATH];
+    snprintf(pattern, sizeof(pattern), "%s\\*", path);
+    HANDLE h = FindFirstFileA(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return -1;
+    long long total = 0;
+    do {
+        if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
+            continue;
+        char child[MAX_PATH];
+        snprintf(child, sizeof(child), "%s\\%s", path, fd.cFileName);
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            total += plat_dir_size(child);
+        else
+            total += ((long long)fd.nFileSizeHigh << 32) | fd.nFileSizeLow;
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+    return total;
+}
+
 /* ── Misc ────────────────────────────────────────────────────── */
 
 void plat_sleep_ms(int ms) {

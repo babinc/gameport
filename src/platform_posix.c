@@ -299,6 +299,31 @@ char *plat_which(const char *bin) {
     return NULL;
 }
 
+long long plat_dir_size(const char *path) {
+    DIR *d = opendir(path);
+    if (!d) {
+        struct stat st;
+        if (stat(path, &st) == 0) return (long long)st.st_size;
+        return -1;
+    }
+    long long total = 0;
+    struct dirent *ent;
+    while ((ent = readdir(d)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+            continue;
+        char child[1024];
+        snprintf(child, sizeof(child), "%s/%s", path, ent->d_name);
+        struct stat st;
+        if (stat(child, &st) != 0) continue;
+        if (S_ISDIR(st.st_mode))
+            total += plat_dir_size(child);
+        else
+            total += (long long)st.st_size;
+    }
+    closedir(d);
+    return total;
+}
+
 /* ── Misc ────────────────────────────────────────────────────── */
 
 void plat_sleep_ms(int ms) {

@@ -27,6 +27,7 @@ typedef struct {
     int *cloned;              /* cached is_git_cloned_not_ready */
     int *deps_satisfied;      /* cached deps_check_satisfied */
     char **install_methods;   /* cached load_install_method per game */
+    long long *disk_sizes;    /* cached directory size per game (-1 = N/A) */
     int should_quit;
     unsigned long tick;
     AppMode mode;
@@ -42,6 +43,7 @@ typedef struct {
     const char *panel_label;  /* "INSTALLING", "REMOVING", "RUNNING" */
     int panel_scroll;
     int active_game;          /* real GAMES[] index of game being installed/run */
+    int game_running;         /* 1 if a graphical game is running in background */
 
     /* Command chain: next command to run after current child exits OK */
     char **next_cmd;          /* NULL-terminated, malloc'd (freed after use) */
@@ -88,6 +90,7 @@ void app_prev(App *app);
 void app_set_message(App *app, const char *msg, int ok);
 void app_clear_message(App *app);
 void app_rebuild_filter(App *app);
+void app_ensure_disk_size(App *app, int gi);
 
 extern const int NUM_CATEGORIES;
 extern const int NUM_PLAT_FILTERS;

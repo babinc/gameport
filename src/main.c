@@ -436,10 +436,33 @@ int main(void) {
             }
         }
 
+        /* Poll background game process */
+        if (app.game_running && !app.child.done) {
+            child_poll(&app.child);
+        }
+        if (app.game_running && app.child.done) {
+            app.game_running = 0;
+            child_cleanup(&app.child);
+            if (!app.child.ok) {
+                char msg[128];
+                snprintf(msg, sizeof(msg), "%s exited with error",
+                         GAMES[app.active_game].name);
+                app_set_message(&app, msg, 0);
+            } else {
+                app_clear_message(&app);
+            }
+        }
+
         /* Draw */
         ui_draw(scr, &app);
         screen_flush(scr);
         app.tick++;
+
+        /* Lazily compute disk size for the selected game (outside render) */
+        if (app.mode == MODE_NORMAL && app.filter_count > 0 &&
+            !IS_HEADER(app.filtered[app.selected])) {
+            app_ensure_disk_size(&app, app.filtered[app.selected]);
+        }
 
         /* Poll for input (100ms timeout for animations) */
         KeyEvent key = term_poll_key(100);
@@ -464,7 +487,7 @@ int main(void) {
             case KEY_ENTER:
                 if (app.child.done) {
                     close_panel(&app);
-                } else if (key.type == KEY_ESC && app.mode == MODE_RUNNING) {
+                } else if (key.type == KEY_ESC) {
                     chain_clear(&app);
                     child_kill(&app.child);
                     child_cleanup(&app.child);
@@ -620,6 +643,10 @@ int main(void) {
                     app_rebuild_filter(&app);
                     break;
                 }
+                if (app.game_running) {
+                    app_set_message(&app, "A game is already running.", 0);
+                    break;
+                }
                 app.active_game = gi;
                 const Game *g = &GAMES[gi];
                 if (app.cloned[gi]) {
@@ -662,12 +689,13 @@ int main(void) {
                             app_clear_message(&app);
                         }
                     } else {
-                        /* Graphical / captured games */
+                        /* Graphical games run in background */
                         child_start(&app.child, cmd, cwd);
-                        app.mode = MODE_RUNNING;
-                        app.panel_label = "RUNNING";
-                        app.panel_scroll = 0;
-                        app_clear_message(&app);
+                        app.active_game = gi;
+                        app.game_running = 1;
+                        char msg[128];
+                        snprintf(msg, sizeof(msg), "Playing %s...", g->name);
+                        app_set_message(&app, msg, 1);
                     }
                 }
                 break;
@@ -736,6 +764,10 @@ int main(void) {
                         app.cat_collapsed[ci] = 0;
                     app_rebuild_filter(&app);
                 } else if (key.ch == 'i' || key.ch == 'd') {
+                    if (app.game_running) {
+                        app_set_message(&app, "A game is running. Close it first.", 0);
+                        break;
+                    }
                     if (app.filter_count == 0) break;
                     int idx = app.filtered[app.selected];
                     if (IS_HEADER(idx)) break;

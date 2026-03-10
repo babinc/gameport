@@ -101,6 +101,8 @@ void app_init(App *app) {
     app->cloned = malloc((size_t)NUM_GAMES * sizeof(int));
     app->deps_satisfied = malloc((size_t)NUM_GAMES * sizeof(int));
     app->install_methods = calloc((size_t)NUM_GAMES, sizeof(char *));
+    app->disk_sizes = malloc((size_t)NUM_GAMES * sizeof(long long));
+    for (int i = 0; i < NUM_GAMES; i++) app->disk_sizes[i] = -1;
     app->filtered = malloc((size_t)(NUM_GAMES + NUM_CATEGORIES) * sizeof(int));
     app->toolchains = toolchains_detect();
     memset(&app->child.proc, 0, sizeof(app->child.proc));
@@ -122,8 +124,24 @@ void app_refresh(App *app) {
         app->deps_satisfied[i] = deps ? deps_check_satisfied(deps) : 0;
         free(app->install_methods[i]);
         app->install_methods[i] = load_install_method(GAMES[i].name);
+        app->disk_sizes[i] = -1;  /* reset; computed lazily on selection */
     }
     app->toolchains = toolchains_detect();
+}
+
+void app_ensure_disk_size(App *app, int gi) {
+    if (app->disk_sizes[gi] != -1) return;
+    if (!app->installed[gi]) { app->disk_sizes[gi] = 0; return; }
+    const Source *src = default_source(&GAMES[gi]);
+    if (src && (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD)) {
+        char *gdir = games_dir();
+        char path[1024];
+        snprintf(path, sizeof(path), "%s/%s", gdir, src->dir);
+        free(gdir);
+        app->disk_sizes[gi] = plat_dir_size(path);
+    } else {
+        app->disk_sizes[gi] = 0;
+    }
 }
 
 void app_cleanup(App *app) {
@@ -132,6 +150,7 @@ void app_cleanup(App *app) {
     free(app->deps_satisfied);
     for (int i = 0; i < NUM_GAMES; i++) free(app->install_methods[i]);
     free(app->install_methods);
+    free(app->disk_sizes);
     free(app->filtered);
     free(app->last_log);
     if (app->next_cmd) free_cmd(app->next_cmd);
@@ -602,6 +621,20 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     /* Installed-via line */
     if (installed && row < y + h - 2 && app->install_methods[gi]) {
         detail_row(s, ix, row, iw, "Installed ", app->install_methods[gi], CLR_GREEN);
+        row++;
+    }
+
+    /* Disk size (computed outside render by main loop) */
+    if (installed && row < y + h - 2 && app->disk_sizes[gi] > 0) {
+        char sbuf[32];
+        long long sz = app->disk_sizes[gi];
+        if (sz >= 1024LL * 1024 * 1024)
+            snprintf(sbuf, sizeof(sbuf), "%.1f GB", (double)sz / (1024.0 * 1024 * 1024));
+        else if (sz >= 1024LL * 1024)
+            snprintf(sbuf, sizeof(sbuf), "%.1f MB", (double)sz / (1024.0 * 1024));
+        else
+            snprintf(sbuf, sizeof(sbuf), "%.1f KB", (double)sz / 1024.0);
+        detail_row(s, ix, row, iw, "Size      ", sbuf, CLR_DIMWHITE);
         row++;
     }
 
