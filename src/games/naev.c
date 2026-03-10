@@ -21,8 +21,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~200 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/naev/naev/releases/download/v0.12.6/naev-0.12.6-linux-x86-64.AppImage",
-    .clone_dir = "naev",
+    .url = "https://github.com/naev/naev/releases/download/v0.12.6/naev-0.12.6-linux-x86-64.AppImage",
+    .dir = "naev",
     .bin = "naev",
     .play_cmd = play,
 }};

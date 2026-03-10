@@ -39,8 +39,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (make, terminal/curses)",
-    .clone_url = "https://github.com/CleverRaven/Cataclysm-DDA.git",
-    .clone_dir = "cataclysm-dda", .shallow = 1,
+    .url = "https://github.com/CleverRaven/Cataclysm-DDA.git",
+    .dir = "cataclysm-dda", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "cataclysm",
 }};
@@ -51,7 +51,7 @@ static const Game game_data = {
     .keys = keys, .category = "Roguelike",
     .engine = "ncurses", .website = "https://cataclysmdda.org/",
     .repo = "https://github.com/CleverRaven/Cataclysm-DDA",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

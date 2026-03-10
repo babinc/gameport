@@ -65,8 +65,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
-    .clone_url = "https://github.com/Warzone2100/warzone2100.git",
-    .clone_dir = "warzone2100", .shallow = 1,
+    .url = "https://github.com/Warzone2100/warzone2100.git",
+    .dir = "warzone2100", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "warzone2100",
 }};
@@ -77,7 +77,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "custom (OpenGL)", .website = "https://wz2100.net/",
     .repo = "https://github.com/Warzone2100/warzone2100",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

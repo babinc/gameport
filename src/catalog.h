@@ -10,7 +10,7 @@ const char *acquire_str(AcquireMethod m);
 /* ── Platform deps ────────────────────────────────────────────── */
 typedef struct {
     const char *os;             /* "linux", "windows", "macos" */
-    const char *deps;           /* human-readable dep list */
+    const char *label;          /* human-readable dep list */
     const char **install_cmd;   /* NULL-terminated */
     const char **check_cmd;     /* NULL-terminated */
     int needs_sudo;
@@ -23,8 +23,8 @@ typedef struct {
     const char **platforms;     /* NULL-terminated, NULL = all */
 
     /* Acquire (git clone or download) */
-    const char *clone_url;      /* git URL or download URL */
-    const char *clone_dir;      /* local directory name */
+    const char *url;            /* git URL or download URL */
+    const char *dir;      /* local directory name */
     int shallow;                /* git: shallow clone */
     const char *archive_type;   /* download: NULL=raw binary, "tar.gz", "zip" */
 
@@ -51,7 +51,7 @@ typedef struct {
     const char *repo;
     const char **platforms;     /* NULL-terminated, NULL = all */
     const PlatformDeps *platform_deps;
-    int num_deps;
+    int num_platform_deps;
     const Source *sources;
     int num_sources;
 } Game;

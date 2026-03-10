@@ -22,8 +22,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~70 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/MegaGlest/megaglest-source/releases/download/3.13.0/MegaGlest-3.13.0-x86_64.AppImage",
-    .clone_dir = "megaglest",
+    .url = "https://github.com/MegaGlest/megaglest-source/releases/download/3.13.0/MegaGlest-3.13.0-x86_64.AppImage",
+    .dir = "megaglest",
     .bin = "megaglest",
     .play_cmd = play,
 }};

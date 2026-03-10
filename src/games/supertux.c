@@ -14,8 +14,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~90 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/SuperTux/supertux/releases/download/v0.6.3/SuperTux-v0.6.3.glibc2.29-x86_64.AppImage",
-    .clone_dir = "supertux",
+    .url = "https://github.com/SuperTux/supertux/releases/download/v0.6.3/SuperTux-v0.6.3.glibc2.29-x86_64.AppImage",
+    .dir = "supertux",
     .bin = "supertux2",
     .play_cmd = play,
 }};

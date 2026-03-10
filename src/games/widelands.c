@@ -55,8 +55,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
-    .clone_url = "https://github.com/widelands/widelands.git",
-    .clone_dir = "widelands", .shallow = 1,
+    .url = "https://github.com/widelands/widelands.git",
+    .dir = "widelands", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "widelands",
 }};
@@ -67,7 +67,7 @@ static const Game game_data = {
     .keys = keys, .category = "Strategy",
     .engine = "SDL2 (OpenGL)", .website = "https://www.widelands.org/",
     .repo = "https://github.com/widelands/widelands",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

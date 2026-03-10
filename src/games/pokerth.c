@@ -17,8 +17,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~30 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/pokerth/pokerth/releases/download/v2.0.6/PokerTH-2.0.6.AppImage",
-    .clone_dir = "pokerth",
+    .url = "https://github.com/pokerth/pokerth/releases/download/v2.0.6/PokerTH-2.0.6.AppImage",
+    .dir = "pokerth",
     .bin = "pokerth",
     .play_cmd = play,
 }};

@@ -45,7 +45,7 @@ int game_supports_platform(const Game *g) {
 
 const PlatformDeps *platform_deps_for_current(const Game *g) {
     const char *os = current_platform();
-    for (int i = 0; i < g->num_deps; i++) {
+    for (int i = 0; i < g->num_platform_deps; i++) {
         if (strcmp(g->platform_deps[i].os, os) == 0)
             return &g->platform_deps[i];
     }

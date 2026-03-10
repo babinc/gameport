@@ -45,8 +45,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (cmake + SDL2 + OpenGL)",
-    .clone_url = "https://github.com/endless-sky/endless-sky.git",
-    .clone_dir = "endless-sky", .shallow = 1,
+    .url = "https://github.com/endless-sky/endless-sky.git",
+    .dir = "endless-sky", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "endless-sky",
 }};
@@ -57,7 +57,7 @@ static const Game game_data = {
     .keys = keys, .category = "Simulation",
     .engine = "SDL2 (OpenGL)", .website = "https://endless-sky.github.io/",
     .repo = "https://github.com/endless-sky/endless-sky",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

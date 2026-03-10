@@ -76,8 +76,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (make, terminal)",
-    .clone_url = "https://github.com/NetHack/NetHack.git",
-    .clone_dir = "nethack", .shallow = 1,
+    .url = "https://github.com/NetHack/NetHack.git",
+    .dir = "nethack", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "nethack",
 }};
@@ -88,7 +88,7 @@ static const Game game_data = {
     .keys = keys, .category = "Roguelike",
     .engine = "ncurses", .website = "https://www.nethack.org/",
     .repo = "https://github.com/NetHack/NetHack",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

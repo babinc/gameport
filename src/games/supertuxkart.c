@@ -55,8 +55,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
-    .clone_url = "https://github.com/supertuxkart/stk-code.git",
-    .clone_dir = "stk-code",
+    .url = "https://github.com/supertuxkart/stk-code.git",
+    .dir = "stk-code",
     .build_cmd = build, .play_cmd = play,
     .bin = "supertuxkart",
 }};
@@ -67,7 +67,7 @@ static const Game game_data = {
     .keys = keys, .category = "Racing",
     .engine = "custom (Irrlicht)", .website = "https://supertuxkart.net/",
     .repo = "https://github.com/supertuxkart/stk-code",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

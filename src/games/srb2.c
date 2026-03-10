@@ -58,8 +58,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + make)",
-    .clone_url = "https://github.com/STJr/SRB2.git",
-    .clone_dir = "SRB2", .shallow = 1,
+    .url = "https://github.com/STJr/SRB2.git",
+    .dir = "SRB2", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "lsdl2srb2",
 }};
@@ -70,7 +70,7 @@ static const Game game_data = {
     .keys = keys, .category = "Platformer",
     .engine = "Doom (SDL2)", .website = "https://www.srb2.org/",
     .repo = "https://github.com/STJr/SRB2",
-    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_deps = 1,
+    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

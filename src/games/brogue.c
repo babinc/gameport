@@ -40,8 +40,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (make + SDL2)",
-    .clone_url = "https://github.com/tmewett/BrogueCE.git",
-    .clone_dir = "brogue-ce", .shallow = 1,
+    .url = "https://github.com/tmewett/BrogueCE.git",
+    .dir = "brogue-ce", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "brogue",
 }};
@@ -51,7 +51,7 @@ static const Game game_data = {
     .desc = "A beautiful minimalist roguelike. Explore a 26-level dungeon with gorgeous ASCII art, clever puzzles, and deeply tactical combat. Community Edition of the classic.",
     .keys = keys, .category = "Roguelike",
     .engine = "SDL2", .repo = "https://github.com/tmewett/BrogueCE",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

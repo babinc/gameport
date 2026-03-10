@@ -18,8 +18,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~30 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/flareteam/flare-game/releases/download/v1.14/flare-linux64-v1.14.AppImage",
-    .clone_dir = "flare",
+    .url = "https://github.com/flareteam/flare-game/releases/download/v1.14/flare-linux64-v1.14.AppImage",
+    .dir = "flare",
     .bin = "flare",
     .play_cmd = play,
 }};

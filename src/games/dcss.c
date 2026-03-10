@@ -24,8 +24,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (console, ~11 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/crawl/crawl/releases/download/0.34.0/dcss-0.34.0-linux-console.x86_64.AppImage",
-    .clone_dir = "dcss",
+    .url = "https://github.com/crawl/crawl/releases/download/0.34.0/dcss-0.34.0-linux-console.x86_64.AppImage",
+    .dir = "dcss",
     .bin = "dcss",
     .play_cmd = play,
 }};

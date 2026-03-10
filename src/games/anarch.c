@@ -35,8 +35,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + gcc)",
-    .clone_url = "https://gitlab.com/drummyfish/anarch.git",
-    .clone_dir = "anarch", .shallow = 1,
+    .url = "https://gitlab.com/drummyfish/anarch.git",
+    .dir = "anarch", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "anarch",
 }};
@@ -47,7 +47,7 @@ static const Game game_data = {
     .keys = keys, .category = "Action",
     .engine = "SDL2", .website = "https://drummyfish.gitlab.io/anarch/",
     .repo = "https://gitlab.com/drummyfish/anarch",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

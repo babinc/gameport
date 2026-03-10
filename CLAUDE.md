@@ -93,7 +93,7 @@ All other engines use captured `child_start` (output panel).
 
 - **Always add `default:` or handle all enum cases** in switch statements on `AcquireMethod` — the compiler warns on `-Wall` but missing a case silently falls through
 - **Use shared platform constants** (`PLATFORMS_LINUX`, `PLATFORMS_POSIX`, etc.) instead of defining `static const char *platforms[]` in game files
-- **Use `source_cwd()`** helper instead of inlining the `games_dir()` + `clone_dir` pattern
+- **Use `source_cwd()`** helper instead of inlining the `games_dir()` + `dir` pattern
 - **Expose counts via ui.h** (`NUM_PLAT_FILTERS`, `NUM_CATEGORIES`) — never hardcode magic numbers for array sizes or modulo cycling
 - **Cache computed values in App struct** rather than recomputing in render functions (render runs every 100ms)
 - **Use `mktemp`** for temp files in shell scripts, never hardcode `/tmp/` paths (concurrency + symlink attacks)

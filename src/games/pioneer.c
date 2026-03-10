@@ -21,8 +21,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~60 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/pioneerspacesim/pioneer/releases/download/20260203/Pioneer-x86_64.AppImage",
-    .clone_dir = "pioneer",
+    .url = "https://github.com/pioneerspacesim/pioneer/releases/download/20260203/Pioneer-x86_64.AppImage",
+    .dir = "pioneer",
     .bin = "pioneer",
     .play_cmd = play,
 }};

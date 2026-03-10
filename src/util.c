@@ -109,8 +109,8 @@ int is_git_cloned_not_ready(const Game *g) {
     if (!check) return 0;
     char *gdir = games_dir();
     char git_path[1024], bin_path[1024];
-    snprintf(git_path, sizeof(git_path), "%s/%s/.git", gdir, src->clone_dir);
-    snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->clone_dir, check);
+    snprintf(git_path, sizeof(git_path), "%s/%s/.git", gdir, src->dir);
+    snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->dir, check);
     free(gdir);
     return plat_file_exists(git_path) && !plat_file_exists(bin_path);
 }
@@ -124,7 +124,7 @@ int is_installed(const Game *g) {
         if (!check) return 0;
         char *gdir = games_dir();
         char path[1024];
-        snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->clone_dir, check);
+        snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->dir, check);
         free(gdir);
         return plat_file_exists(path);
     }

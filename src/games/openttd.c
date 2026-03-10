@@ -59,8 +59,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
-    .clone_url = "https://github.com/OpenTTD/OpenTTD.git",
-    .clone_dir = "OpenTTD",
+    .url = "https://github.com/OpenTTD/OpenTTD.git",
+    .dir = "OpenTTD",
     .build_cmd = build, .play_cmd = play,
     .bin = "openttd",
 }};
@@ -71,7 +71,7 @@ static const Game game_data = {
     .keys = keys, .category = "Simulation",
     .engine = "SDL2", .website = "https://www.openttd.org/",
     .repo = "https://github.com/OpenTTD/OpenTTD",
-    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_deps = 2,
+    .platforms = PLATFORMS_POSIX, .platform_deps = deps, .num_platform_deps = 2,
     .sources = sources, .num_sources = 1,
 };
 

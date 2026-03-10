@@ -21,8 +21,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~1.7 GB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://releases.wildfiregames.com/0ad-0.28.0-x86_64.AppImage",
-    .clone_dir = "zeroad",
+    .url = "https://releases.wildfiregames.com/0ad-0.28.0-x86_64.AppImage",
+    .dir = "zeroad",
     .bin = "zeroad",
     .play_cmd = play,
 }};

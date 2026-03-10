@@ -22,8 +22,8 @@ static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
     .label = "Download AppImage (~40 MB)",
     .platforms = PLATFORMS_LINUX,
-    .clone_url = "https://github.com/OpenRA/OpenRA/releases/download/release-20250330/OpenRA-Red-Alert-x86_64.AppImage",
-    .clone_dir = "openra-ra",
+    .url = "https://github.com/OpenRA/OpenRA/releases/download/release-20250330/OpenRA-Red-Alert-x86_64.AppImage",
+    .dir = "openra-ra",
     .bin = "openra-ra",
     .play_cmd = play,
 }};

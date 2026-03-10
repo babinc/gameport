@@ -70,8 +70,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + cmake)",
-    .clone_url = "https://github.com/stgatilov/darkmod_src.git",
-    .clone_dir = "darkmod_src", .shallow = 1,
+    .url = "https://github.com/stgatilov/darkmod_src.git",
+    .dir = "darkmod_src", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
     .bin = "thedarkmod.x64",
 }};
@@ -82,7 +82,7 @@ static const Game game_data = {
     .keys = keys, .category = "Stealth",
     .engine = "id Tech 4 (modified)", .website = "https://www.thedarkmod.com/",
     .repo = "https://github.com/stgatilov/darkmod_src",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 1,
+    .platforms = platforms, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

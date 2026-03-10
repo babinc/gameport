@@ -46,8 +46,8 @@ static const PlatformDeps deps[] = {
 
 static const Source sources[] = {{
     .method = ACQUIRE_GIT, .label = "Build from source (git + make)",
-    .clone_url = "https://github.com/redeclipse/base.git",
-    .clone_dir = "red-eclipse",
+    .url = "https://github.com/redeclipse/base.git",
+    .dir = "red-eclipse",
     .build_cmd = build, .play_cmd = play,
     .bin = "redeclipse_linux",
 }};
@@ -58,7 +58,7 @@ static const Game game_data = {
     .keys = keys, .category = "Shooter",
     .engine = "Cube 2 (SDL2)", .website = "https://www.redeclipse.net/",
     .repo = "https://github.com/redeclipse/base",
-    .platforms = platforms, .platform_deps = deps, .num_deps = 1,
+    .platforms = platforms, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 

@@ -70,7 +70,7 @@ static void chain_clear(App *app) {
 static const char *source_cwd(const Source *src, char *buf, size_t buflen) {
     if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
         char *gdir = games_dir();
-        snprintf(buf, buflen, "%s/%s", gdir, src->clone_dir);
+        snprintf(buf, buflen, "%s/%s", gdir, src->dir);
         free(gdir);
         return buf;
     }
@@ -92,7 +92,7 @@ static void start_cargo_uninstall(App *app, const Source *src) {
 static void start_git_acquire(App *app, const Source *src) {
     char *gdir = games_dir();
     char game_path[1024], git_path[1030];
-    snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->clone_dir);
+    snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->dir);
     snprintf(git_path, sizeof(git_path), "%s/.git", game_path);
 
     /* Chain the build command (runs after acquire finishes) */
@@ -108,26 +108,26 @@ static void start_git_acquire(App *app, const Source *src) {
         /* Fresh clone */
         if (src->shallow) {
             const char *cmd[] = {"git", "clone", "--depth", "1",
-                                 src->clone_url, game_path, NULL};
+                                 src->url, game_path, NULL};
             child_start(&app->child, cmd, NULL);
         } else {
-            const char *cmd[] = {"git", "clone", src->clone_url, game_path, NULL};
+            const char *cmd[] = {"git", "clone", src->url, game_path, NULL};
             child_start(&app->child, cmd, NULL);
         }
     }
     free(gdir);
 }
 
-static void start_git_remove(App *app, const Source *src) {
+static void start_local_remove(App *app, const Source *src) {
     char *gdir = games_dir();
     char path[1024];
-    snprintf(path, sizeof(path), "%s/%s", gdir, src->clone_dir);
+    snprintf(path, sizeof(path), "%s/%s", gdir, src->dir);
     free(gdir);
 
     /* Remove synchronously (directory delete is fast) */
     linebuf_init(&app->child.output);
     char msg[1024];
-    snprintf(msg, sizeof(msg), "Removing %s...", src->clone_dir);
+    snprintf(msg, sizeof(msg), "Removing %s...", src->dir);
     linebuf_push(&app->child.output, msg);
 
     if (plat_rmdir_rf(path)) {
@@ -143,7 +143,7 @@ static void start_git_remove(App *app, const Source *src) {
 static void start_download_acquire(App *app, const Source *src) {
     char *gdir = games_dir();
     char game_path[1024];
-    snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->clone_dir);
+    snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->dir);
 
     /* Chain the build command if any */
     if (src->build_cmd && src->build_cmd[0]) {
@@ -168,7 +168,7 @@ static void start_download_acquire(App *app, const Source *src) {
             "tar.exe xf $dl -C '%s' --strip-components=1\n"
             "Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
             "Write-Host 'Done!'",
-            game_path, src->clone_dir, src->clone_url, game_path);
+            game_path, src->dir, src->url, game_path);
     } else if (at && strcmp(at, "zip") == 0) {
         snprintf(script, sizeof(script),
             "$ErrorActionPreference='Stop'\n"
@@ -179,7 +179,7 @@ static void start_download_acquire(App *app, const Source *src) {
             "Expand-Archive -Path $dl -DestinationPath '%s' -Force\n"
             "Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
             "Write-Host 'Done!'",
-            game_path, src->clone_dir, src->clone_url, game_path);
+            game_path, src->dir, src->url, game_path);
     } else {
         /* Raw binary / exe download */
         snprintf(script, sizeof(script),
@@ -188,8 +188,8 @@ static void start_download_acquire(App *app, const Source *src) {
             "Write-Host 'Downloading %s...'\n"
             "curl.exe -fSL -o '%s\\%s' '%s'\n"
             "Write-Host 'Done!'",
-            game_path, src->clone_dir,
-            game_path, src->bin, src->clone_url);
+            game_path, src->dir,
+            game_path, src->bin, src->url);
     }
     const char *cmd[] = {"powershell", "-NoProfile", "-Command", script, NULL};
 #else
@@ -207,7 +207,7 @@ static void start_download_acquire(App *app, const Source *src) {
             "echo 'Downloading %s...'\n"
             "curl -fSL '%s' | tar x%s -C '%s' --strip-components=1\n"
             "echo 'Done!'",
-            game_path, src->clone_dir, src->clone_url, flag, game_path);
+            game_path, src->dir, src->url, flag, game_path);
     } else if (at && strcmp(at, "zip") == 0) {
         snprintf(script, sizeof(script),
             "set -e\n"
@@ -218,7 +218,7 @@ static void start_download_acquire(App *app, const Source *src) {
             "curl -fSL -o \"$dl\" '%s'\n"
             "unzip -o \"$dl\" -d '%s'\n"
             "echo 'Done!'",
-            game_path, src->clone_dir, src->clone_url, game_path);
+            game_path, src->dir, src->url, game_path);
     } else {
         /* Raw binary download */
         snprintf(script, sizeof(script),
@@ -228,8 +228,8 @@ static void start_download_acquire(App *app, const Source *src) {
             "curl -fSL -o '%s/%s' '%s'\n"
             "chmod +x '%s/%s'\n"
             "echo 'Done!'",
-            game_path, src->clone_dir,
-            game_path, src->bin, src->clone_url,
+            game_path, src->dir,
+            game_path, src->bin, src->url,
             game_path, src->bin);
     }
     const char *cmd[] = {"bash", "-c", script, NULL};
@@ -257,8 +257,8 @@ static void begin_uninstall(App *app, const Source *src) {
     kill_game_process(src->bin);
     switch (src->method) {
     case ACQUIRE_CARGO:    start_cargo_uninstall(app, src); break;
-    case ACQUIRE_GIT:      start_git_remove(app, src);      break;
-    case ACQUIRE_DOWNLOAD: start_git_remove(app, src);      break;  /* same: rm dir */
+    case ACQUIRE_GIT:      start_local_remove(app, src);      break;
+    case ACQUIRE_DOWNLOAD: start_local_remove(app, src);      break;  /* same: rm dir */
     }
     app->panel_label = "REMOVING";
     app->mode = MODE_INSTALLING;

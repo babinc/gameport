@@ -592,7 +592,7 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
         int sat = app->deps_satisfied[gi];
         int cx = ix;
         cx += scr_str_n(s, cx, row, "Deps      ", iw, CLR_LABEL, CLR_BG, 0);
-        cx += scr_str_n(s, cx, row, deps->deps, iw - (cx - ix),
+        cx += scr_str_n(s, cx, row, deps->label, iw - (cx - ix),
                          sat ? CLR_GREEN : CLR_YELLOW, CLR_BG, 0);
         scr_str_n(s, cx, row, sat ? " (installed)" : " (needed)", iw - (cx - ix),
                   sat ? CLR_DARKGRAY : CLR_YELLOW, CLR_BG, 0);
