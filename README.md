@@ -2,7 +2,7 @@
 
 A terminal UI for discovering, installing, and launching open-source games.
 
-Browse 50+ games across 12 categories, install with one keypress, and play — all without leaving the terminal.
+Browse 50+ games across 12 categories, install with one keypress, and playall without leaving the terminal.
 
 ![GamePort screenshot](https://raw.githubusercontent.com/babinc/gameport/master/screenshot.png)
 
@@ -24,9 +24,9 @@ cmake --build build
 
 Games are installed on demand. Depending on the game, you may need:
 
-- **curl** — downloads pre-built binaries and archives
-- **cargo** — installs Rust-based games via `cargo install`
-- **git + cmake + make** — builds games from source
+- **curl** downloads pre-built binaries and archives
+- **cargo** installs Rust-based games via `cargo install`
+- **git + cmake + make** builds games from source
 
 GamePort shows which tools you have as badges in the header.
 
@@ -49,22 +49,22 @@ GamePort shows which tools you have as badges in the header.
 
 52 games across 12 categories:
 
-**Action** — Tetris, RecWars, ClassiCube, Armagetron Advanced, Luanti
-**Card** — PokerTH
-**Platformer** — Sonic Robo Blast 2, SuperTux
-**Puzzle** — Minesweeper, 2048, Colobot
-**Racing** — SuperTuxKart, Speed Dreams
-**Roguelike** — Brogue CE, Cataclysm: DDA, NetHack, Dungeon Crawl Stone Soup, Angband
-**RPG** — Flare RPG, Veloren, The Ur-Quan Masters
-**Shooter** — Space Invaders, Asteroids, Anarch, Chocolate Doom, Red Eclipse, C-Dogs SDL, Teeworlds, Xonotic
-**Simulation** — OpenTTD, Endless Sky, Naev, Pioneer
-**Stealth** — The Dark Mod
-**Strategy** — Chess TUI, Warzone 2100, Widelands, Battle for Wesnoth, MegaGlest, 0 A.D., OpenRA: Red Alert, Unciv, FreeCiv, FreeOrion, Hedgewars, Mindustry, OpenClonk
-**Typing** — ttyper
+**Action:** Tetris, RecWars, ClassiCube, Armagetron Advanced, Luanti
+**Card:** PokerTH
+**Platformer:** Sonic Robo Blast 2, SuperTux
+**Puzzle:** Minesweeper, 2048, Colobot
+**Racing:** SuperTuxKart, Speed Dreams
+**Roguelike:** Brogue CE, Cataclysm: DDA, NetHack, Dungeon Crawl Stone Soup, Angband
+**RPG:** Flare RPG, Veloren, The Ur-Quan Masters
+**Shooter:** Space Invaders, Asteroids, Anarch, Chocolate Doom, Red Eclipse, C-Dogs SDL, Teeworlds, Xonotic
+**Simulation:** OpenTTD, Endless Sky, Naev, Pioneer
+**Stealth:** The Dark Mod
+**Strategy:** Chess TUI, Warzone 2100, Widelands, Battle for Wesnoth, MegaGlest, 0 A.D., OpenRA: Red Alert, Unciv, FreeCiv, FreeOrion, Hedgewars, Mindustry, OpenClonk
+**Typing:** ttyper
 
 ## Platforms
 
-GamePort runs on Linux, macOS, and Windows. Each game lists which platforms it supports — the platform filter lets you see only games available on your OS.
+GamePort runs on Linux, macOS, and Windows. Each game lists which platforms it supports, and the platform filter lets you see only games available on your OS.
 
 ## License
 
