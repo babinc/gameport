@@ -25,7 +25,20 @@ static const char *build[] = {
     "echo 'Configuring cmake...'\n"
     "cmake .. -DCMAKE_BUILD_TYPE=Release\n"
     "echo 'Building (this may take a while)...'\n"
-    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
+    "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)\n"
+    "echo 'Downloading OpenGFX base graphics...'\n"
+    "GFX_DIR=\"$HOME/.local/share/openttd/baseset\"\n"
+    "mkdir -p \"$GFX_DIR\"\n"
+    "if [ ! -d \"$GFX_DIR/opengfx-7.1\" ]; then\n"
+    "  dl=$(mktemp /tmp/opengfx.XXXXXX.zip)\n"
+    "  trap 'rm -f \"$dl\"' EXIT\n"
+    "  curl -fSL -o \"$dl\" "
+    "'https://cdn.openttd.org/opengfx-releases/7.1/opengfx-7.1-all.zip'\n"
+    "  unzip -o \"$dl\" -d \"$GFX_DIR\"\n"
+    "  echo 'OpenGFX installed!'\n"
+    "else\n"
+    "  echo 'OpenGFX already installed.'\n"
+    "fi",
     NULL
 };
 static const char *play[] = {"./build/openttd", NULL};
