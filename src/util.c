@@ -86,11 +86,26 @@ int deps_check_satisfied(const PlatformDeps *deps) {
     return plat_run_silent(deps->check_cmd, NULL);
 }
 
+/* Derive the install-check path from play_cmd, stripping leading "./" or ".\\"
+   Falls back to .bin only when play_cmd[0] is a wrapper (bash, cmd, etc.) */
+static const char *source_check_path(const Source *src) {
+    if (src->play_cmd && src->play_cmd[0]) {
+        const char *p = src->play_cmd[0];
+        /* Skip wrappers — use .bin instead */
+        if (strcmp(p, "bash") == 0 || strcmp(p, "sh") == 0 ||
+            strcmp(p, "cmd") == 0 || strcmp(p, "powershell") == 0)
+            return src->bin;
+        /* Strip leading ./ or .\\ */
+        if (p[0] == '.' && (p[1] == '/' || p[1] == '\\')) p += 2;
+        return p;
+    }
+    return src->bin;
+}
+
 int is_git_cloned_not_ready(const Game *g) {
     const Source *src = default_source(g);
     if (!src || src->method != ACQUIRE_GIT) return 0;
-    const char *check = src->bin;
-    if (!check) check = (src->play_cmd && src->play_cmd[0]) ? src->play_cmd[0] : NULL;
+    const char *check = source_check_path(src);
     if (!check) return 0;
     char *gdir = games_dir();
     char git_path[1024], bin_path[1024];
@@ -105,9 +120,7 @@ int is_installed(const Game *g) {
     if (!src) return 0;
 
     if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
-        /* Use .bin for install detection (play_cmd[0] may be "bash") */
-        const char *check = src->bin;
-        if (!check) check = (src->play_cmd && src->play_cmd[0]) ? src->play_cmd[0] : NULL;
+        const char *check = source_check_path(src);
         if (!check) return 0;
         char *gdir = games_dir();
         char path[1024];

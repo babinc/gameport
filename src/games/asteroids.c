@@ -83,7 +83,7 @@ static const Source sources[] = {
         .clone_url = "https://github.com/raysan5/raylib-games.git",
         .clone_dir = "asteroids", .shallow = 1,
         .build_cmd = build, .play_cmd = play,
-        .bin = "build/asteroids",
+        .bin = "asteroids",
     },
     {
         .method = ACQUIRE_GIT, .label = "Build from source (cmake + raylib)",
@@ -91,7 +91,7 @@ static const Source sources[] = {
         .clone_url = "https://github.com/raysan5/raylib-games.git",
         .clone_dir = "asteroids", .shallow = 1,
         .build_cmd = win_build, .play_cmd = win_play,
-        .bin = "build\\Release\\asteroids.exe",
+        .bin = "asteroids.exe",
     },
 };
 

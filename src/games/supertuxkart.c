@@ -58,7 +58,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/supertuxkart/stk-code.git",
     .clone_dir = "stk-code",
     .build_cmd = build, .play_cmd = play,
-    .bin = "cmake_build/bin/supertuxkart",
+    .bin = "supertuxkart",
 }};
 
 static const Game game_data = {

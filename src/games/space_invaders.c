@@ -82,7 +82,7 @@ static const Source sources[] = {
         .clone_url = "https://github.com/raysan5/raylib-games.git",
         .clone_dir = "space_invaders", .shallow = 1,
         .build_cmd = build, .play_cmd = play,
-        .bin = "build/space_invaders",
+        .bin = "space_invaders",
     },
     {
         .method = ACQUIRE_GIT, .label = "Build from source (cmake + raylib)",
@@ -90,7 +90,7 @@ static const Source sources[] = {
         .clone_url = "https://github.com/raysan5/raylib-games.git",
         .clone_dir = "space_invaders", .shallow = 1,
         .build_cmd = win_build, .play_cmd = win_play,
-        .bin = "build\\Release\\space_invaders.exe",
+        .bin = "space_invaders.exe",
     },
 };
 

@@ -49,7 +49,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/redeclipse/base.git",
     .clone_dir = "red-eclipse",
     .build_cmd = build, .play_cmd = play,
-    .bin = "redeclipse.sh",
+    .bin = "redeclipse_linux",
 }};
 
 static const Game game_data = {

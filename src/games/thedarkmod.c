@@ -73,7 +73,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/stgatilov/darkmod_src.git",
     .clone_dir = "darkmod_src", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "build/thedarkmod.x64",
+    .bin = "thedarkmod.x64",
 }};
 
 static const Game game_data = {

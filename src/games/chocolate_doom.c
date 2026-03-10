@@ -55,7 +55,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/chocolate-doom/chocolate-doom.git",
     .clone_dir = "chocolate-doom", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "build/src/chocolate-doom",
+    .bin = "chocolate-doom",
 }};
 
 static const Game game_data = {

@@ -43,7 +43,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/tmewett/BrogueCE.git",
     .clone_dir = "brogue-ce", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "bin/brogue",
+    .bin = "brogue",
 }};
 
 static const Game game_data = {
