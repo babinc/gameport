@@ -4,7 +4,7 @@ A terminal UI for discovering, installing, and launching open-source games.
 
 Browse 50+ games across 12 categories, install with one keypress, and play — all without leaving the terminal.
 
-![GamePort screenshot](screenshot.png)
+![GamePort screenshot](https://raw.githubusercontent.com/babinc/gameport/master/screenshot.png)
 
 ## Install
 
