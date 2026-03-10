@@ -26,19 +26,27 @@ static const char *build[] = {
     "cmake .. -DCMAKE_BUILD_TYPE=Release\n"
     "echo 'Building (this may take a while)...'\n"
     "make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)\n"
-    "echo 'Downloading OpenGFX base graphics...'\n"
-    "GFX_DIR=\"$HOME/.local/share/openttd/baseset\"\n"
-    "mkdir -p \"$GFX_DIR\"\n"
-    "if [ ! -d \"$GFX_DIR/opengfx-7.1\" ]; then\n"
-    "  dl=$(mktemp /tmp/opengfx.XXXXXX.zip)\n"
-    "  trap 'rm -f \"$dl\"' EXIT\n"
-    "  curl -fSL -o \"$dl\" "
-    "'https://cdn.openttd.org/opengfx-releases/7.1/opengfx-7.1-all.zip'\n"
-    "  unzip -o \"$dl\" -d \"$GFX_DIR\"\n"
-    "  echo 'OpenGFX installed!'\n"
-    "else\n"
-    "  echo 'OpenGFX already installed.'\n"
-    "fi",
+    "BASE_DIR=\"$HOME/.local/share/openttd/baseset\"\n"
+    "mkdir -p \"$BASE_DIR\"\n"
+    "for PACK in "
+    "'opengfx-releases/7.1/opengfx-7.1-all.zip opengfx-7.1 OpenGFX' "
+    "'opensfx-releases/1.0.3/opensfx-1.0.3-all.zip opensfx-1.0.3 OpenSFX' "
+    "'openmsx-releases/0.4.2/openmsx-0.4.2-all.zip openmsx-0.4.2 OpenMSX'; do\n"
+    "  set -- $PACK\n"
+    "  if [ ! -d \"$BASE_DIR/$2\" ]; then\n"
+    "    echo \"Downloading $3...\"\n"
+    "    dl=$(mktemp)\n"
+    "    curl -fSL -o \"$dl\" \"https://cdn.openttd.org/$1\"\n"
+    "    unzip -o \"$dl\" -d \"$BASE_DIR\"\n"
+    "    rm -f \"$dl\"\n"
+    "    for tarfile in \"$BASE_DIR\"/$2*.tar; do\n"
+    "      [ -f \"$tarfile\" ] && tar xf \"$tarfile\" -C \"$BASE_DIR\" && rm -f \"$tarfile\"\n"
+    "    done\n"
+    "    echo \"$3 installed!\"\n"
+    "  else\n"
+    "    echo \"$3 already installed.\"\n"
+    "  fi\n"
+    "done",
     NULL
 };
 static const char *play[] = {"./build/openttd", NULL};
@@ -67,7 +75,7 @@ static const Source sources[] = {{
 
 static const Game game_data = {
     .name = "OpenTTD", .icon = "O",
-    .desc = "Open-source Transport Tycoon Deluxe. Build rail, road, air, and sea networks to transport passengers and cargo. Compete against AI or friends. Free assets included.",
+    .desc = "Open-source Transport Tycoon Deluxe. Build rail, road, air, and sea networks to transport passengers and cargo. Compete against AI or friends. Free graphics, sounds, and music included.",
     .keys = keys, .category = "Simulation",
     .engine = "SDL2", .website = "https://www.openttd.org/",
     .repo = "https://github.com/OpenTTD/OpenTTD",

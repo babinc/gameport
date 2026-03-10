@@ -29,8 +29,6 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *platforms[] = {"linux", NULL};
-
 static const char *build[] = {
     "bash", "-c",
     "set -e\n"
@@ -82,7 +80,7 @@ static const Game game_data = {
     .keys = keys, .category = "Stealth",
     .engine = "id Tech 4 (modified)", .website = "https://www.thedarkmod.com/",
     .repo = "https://github.com/stgatilov/darkmod_src",
-    .platforms = platforms, .platform_deps = deps, .num_platform_deps = 1,
+    .platforms = PLATFORMS_LINUX, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 
