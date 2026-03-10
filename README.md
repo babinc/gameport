@@ -8,6 +8,16 @@ Browse 50+ games across 12 categories, install with one keypress, and playall wi
 
 ## Install
 
+### Prebuilt binaries
+
+Download the latest release for your platform from [Releases](https://github.com/babinc/gameport/releases):
+
+- `gameport-linux-x86_64.tar.gz`
+- `gameport-macos-arm64.tar.gz`
+- `gameport-windows-x86_64.zip`
+
+Extract and run `gameport`.
+
 ### From source
 
 Requires CMake 3.14+ and a C99 compiler.
