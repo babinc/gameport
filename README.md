@@ -2,7 +2,11 @@
 
 A terminal UI for discovering, installing, and launching open-source games.
 
-Browse 50+ games across 12 categories, install with one keypress, and playall without leaving the terminal.
+- 50+ open-source games across 12 categories
+- One-key install and launch
+- Filter by platform (Linux, macOS, Windows)
+- Search, browse by category, view controls
+- Tracks installed games, shows disk usage
 
 ![GamePort screenshot](https://raw.githubusercontent.com/babinc/gameport/master/screenshot.png)
 
@@ -118,10 +122,6 @@ Chess TUI, Warzone 2100, Widelands, Battle for Wesnoth, MegaGlest, 0 A.D., OpenR
 <summary><b>Typing</b> (1)</summary>
 ttyper
 </details>
-
-## Platforms
-
-GamePort runs on Linux, macOS, and Windows. Each game lists which platforms it supports, and the platform filter lets you see only games available on your OS.
 
 ## License
 
