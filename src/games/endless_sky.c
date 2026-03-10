@@ -48,7 +48,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/endless-sky/endless-sky.git",
     .clone_dir = "endless-sky", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "endless-sky",
+    .bin = "build/endless-sky",
 }};
 
 static const Game game_data = {

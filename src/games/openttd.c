@@ -49,7 +49,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/OpenTTD/OpenTTD.git",
     .clone_dir = "OpenTTD",
     .build_cmd = build, .play_cmd = play,
-    .bin = "OpenTTD",
+    .bin = "build/openttd",
 }};
 
 static const Game game_data = {

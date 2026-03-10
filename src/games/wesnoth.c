@@ -52,7 +52,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/wesnoth/wesnoth.git",
     .clone_dir = "wesnoth", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "wesnoth",
+    .bin = "build/wesnoth",
 }};
 
 static const Game game_data = {

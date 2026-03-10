@@ -68,7 +68,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/Warzone2100/warzone2100.git",
     .clone_dir = "warzone2100", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "warzone2100",
+    .bin = "build/src/warzone2100",
 }};
 
 static const Game game_data = {

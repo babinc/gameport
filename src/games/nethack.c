@@ -79,7 +79,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/NetHack/NetHack.git",
     .clone_dir = "nethack", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "nethack",
+    .bin = "install/games/nethack",
 }};
 
 static const Game game_data = {

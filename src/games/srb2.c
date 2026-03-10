@@ -61,7 +61,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/STJr/SRB2.git",
     .clone_dir = "SRB2", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "lsdl2srb2",
+    .bin = "bin/lsdl2srb2",
 }};
 
 static const Game game_data = {

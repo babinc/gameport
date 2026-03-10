@@ -58,7 +58,7 @@ static const Source sources[] = {{
     .clone_url = "https://github.com/widelands/widelands.git",
     .clone_dir = "widelands", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "widelands",
+    .bin = "build/src/widelands",
 }};
 
 static const Game game_data = {
