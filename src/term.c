@@ -138,7 +138,9 @@ void screen_flush(Screen *s) {
 
             /* Write character */
             char u[4];
-            int ulen = utf8_encode(cell->ch ? cell->ch : ' ', u);
+            uint32_t out_ch = cell->ch;
+            if (out_ch < 0x20 || out_ch == 0x7F) out_ch = ' ';
+            int ulen = utf8_encode(out_ch, u);
             EMIT(u, ulen);
 
             last_r = r;

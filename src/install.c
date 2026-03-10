@@ -91,13 +91,32 @@ int child_poll(ChildProc *cp) {
         /* Split into lines */
         char *start = buf;
         for (char *p = buf; *p; p++) {
-            if (*p == '\n' || *p == '\r') {
+            if (*p == '\n') {
                 *p = '\0';
-                /* Combine with partial */
                 char full[8192];
                 snprintf(full, sizeof(full), "%s%s", cp->partial, start);
                 cp->partial[0] = '\0';
                 linebuf_push(&cp->output, full);
+                new_lines++;
+                start = p + 1;
+            } else if (*p == '\r') {
+                *p = '\0';
+                char full[8192];
+                snprintf(full, sizeof(full), "%s%s", cp->partial, start);
+                cp->partial[0] = '\0';
+                if (*(p + 1) == '\n') {
+                    /* \r\n — treat as normal newline */
+                    p++;
+                    linebuf_push(&cp->output, full);
+                } else {
+                    /* Standalone \r — overwrite last line in-place */
+                    if (cp->output.count > 0 && full[0]) {
+                        free(cp->output.lines[cp->output.count - 1]);
+                        cp->output.lines[cp->output.count - 1] = strdup(full);
+                    } else if (full[0]) {
+                        linebuf_push(&cp->output, full);
+                    }
+                }
                 new_lines++;
                 start = p + 1;
             }
