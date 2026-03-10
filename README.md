@@ -59,18 +59,20 @@ GamePort shows which tools you have as badges in the header.
 
 52 games across 12 categories:
 
-**Action:** Tetris, RecWars, ClassiCube, Armagetron Advanced, Luanti
-**Card:** PokerTH
-**Platformer:** Sonic Robo Blast 2, SuperTux
-**Puzzle:** Minesweeper, 2048, Colobot
-**Racing:** SuperTuxKart, Speed Dreams
-**Roguelike:** Brogue CE, Cataclysm: DDA, NetHack, Dungeon Crawl Stone Soup, Angband
-**RPG:** Flare RPG, Veloren, The Ur-Quan Masters
-**Shooter:** Space Invaders, Asteroids, Anarch, Chocolate Doom, Red Eclipse, C-Dogs SDL, Teeworlds, Xonotic
-**Simulation:** OpenTTD, Endless Sky, Naev, Pioneer
-**Stealth:** The Dark Mod
-**Strategy:** Chess TUI, Warzone 2100, Widelands, Battle for Wesnoth, MegaGlest, 0 A.D., OpenRA: Red Alert, Unciv, FreeCiv, FreeOrion, Hedgewars, Mindustry, OpenClonk
-**Typing:** ttyper
+| Category | Games |
+|----------|-------|
+| Action | Tetris, RecWars, ClassiCube, Armagetron Advanced, Luanti |
+| Card | PokerTH |
+| Platformer | Sonic Robo Blast 2, SuperTux |
+| Puzzle | Minesweeper, 2048, Colobot |
+| Racing | SuperTuxKart, Speed Dreams |
+| Roguelike | Brogue CE, Cataclysm: DDA, NetHack, Dungeon Crawl Stone Soup, Angband |
+| RPG | Flare RPG, Veloren, The Ur-Quan Masters |
+| Shooter | Space Invaders, Asteroids, Anarch, Chocolate Doom, Red Eclipse, C-Dogs SDL, Teeworlds, Xonotic |
+| Simulation | OpenTTD, Endless Sky, Naev, Pioneer |
+| Stealth | The Dark Mod |
+| Strategy | Chess TUI, Warzone 2100, Widelands, Battle for Wesnoth, MegaGlest, 0 A.D., OpenRA: Red Alert, Unciv, FreeCiv, FreeOrion, Hedgewars, Mindustry, OpenClonk |
+| Typing | ttyper |
 
 ## Platforms
 
