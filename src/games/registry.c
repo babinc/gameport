@@ -51,6 +51,9 @@ const Game *game_uqm(void);
 const Game *game_mindustry(void);
 const Game *game_openclonk(void);
 const Game *game_zquest_classic(void);
+const Game *game_sdlpop(void);
+const Game *game_hurrican(void);
+const Game *game_opensurge(void);
 
 typedef const Game *(*GameFn)(void);
 
@@ -105,6 +108,9 @@ static const GameFn game_fns[] = {
     game_mindustry,
     game_openclonk,
     game_zquest_classic,
+    game_sdlpop,
+    game_hurrican,
+    game_opensurge,
 };
 
 #define MAX_GAMES 128

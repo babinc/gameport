@@ -1,4 +1,4 @@
-# GamePort - TUI Game Launcher
+# Open Game Portal - TUI Game Launcher
 
 C99 terminal application that discovers, installs, and launches open-source games.
 
@@ -7,15 +7,15 @@ C99 terminal application that discovers, installs, and launches open-source game
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug    # configure
 cmake --build build                         # build
-./build/gameport                            # run
+./build/open-game-portal                      # run
 ```
 
 Release build: `cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build`
 
-Smoke test: `timeout 1 ./build/gameport` — exit code 124 (killed by timeout) is normal, not a crash.
+Smoke test: `timeout 1 ./build/open-game-portal` — exit code 124 (killed by timeout) is normal, not a crash.
 
 Cross-platform: CMake handles Linux (GCC/Clang), macOS (AppleClang), and Windows (MSVC).
-Version is set in `CMakeLists.txt` via `project(VERSION X.Y.Z)` and passed as `GAMEPORT_VERSION` define.
+Version is set in `CMakeLists.txt` via `project(VERSION X.Y.Z)` and passed as `OGP_VERSION` define.
 
 ## Architecture
 

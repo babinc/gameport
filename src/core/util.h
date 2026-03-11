@@ -25,6 +25,9 @@ char *logs_dir(void);                        /* returns malloc'd path, creates d
 int   deps_check_satisfied(const PlatformDeps *deps);
 int   is_git_cloned_not_ready(const Game *g);
 int   is_installed(const Game *g);
+void  mark_installed(const Source *src);
+void  mark_uninstalled(const Source *src);
+char *resolve_play_binary(const Source *src, const char *cwd);
 
 /* ── Install method tracking ──────────────────────────────────── */
 void  save_install_method(const char *game_name, const char *label);

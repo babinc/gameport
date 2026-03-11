@@ -87,6 +87,7 @@ void  plat_mkdir_p(const char *path);
 int   plat_rmdir_rf(const char *path);  /* recursive delete, returns 1=ok */
 char *plat_which(const char *bin);   /* malloc'd path or NULL */
 long long plat_dir_size(const char *path); /* recursive size in bytes, -1 on error */
+char *plat_find_executable(const char *dir, const char *name); /* recursive search, malloc'd or NULL */
 
 /* ── Misc ────────────────────────────────────────────────────── */
 

@@ -52,20 +52,20 @@ const char *runtime_install_hint(AcquireMethod method) {
 
 /* ── Path helpers ─────────────────────────────────────────────── */
 
-/* OS-aware base data directory for gameport */
+/* OS-aware base data directory for open-game-portal */
 static void data_base(char *buf, size_t buflen) {
     const char *home = getenv("HOME");
     if (!home) home = ".";
 #if defined(__APPLE__)
-    snprintf(buf, buflen, "%s/Library/Application Support/gameport", home);
+    snprintf(buf, buflen, "%s/Library/Application Support/open-game-portal", home);
 #elif defined(_WIN32)
     const char *appdata = getenv("APPDATA");
     if (appdata)
-        snprintf(buf, buflen, "%s/gameport", appdata);
+        snprintf(buf, buflen, "%s/open-game-portal", appdata);
     else
-        snprintf(buf, buflen, "%s/AppData/Roaming/gameport", home);
+        snprintf(buf, buflen, "%s/AppData/Roaming/open-game-portal", home);
 #else
-    snprintf(buf, buflen, "%s/.local/share/gameport", home);
+    snprintf(buf, buflen, "%s/.local/share/open-game-portal", home);
 #endif
 }
 
@@ -86,33 +86,38 @@ int deps_check_satisfied(const PlatformDeps *deps) {
     return plat_run_silent(deps->check_cmd, NULL);
 }
 
-/* Derive the install-check path from play_cmd, stripping leading "./" or ".\\"
-   Falls back to .bin only when play_cmd[0] is a wrapper (bash, cmd, etc.) */
-static const char *source_check_path(const Source *src) {
-    if (src->play_cmd && src->play_cmd[0]) {
-        const char *p = src->play_cmd[0];
-        /* Skip wrappers — use .bin instead */
-        if (strcmp(p, "bash") == 0 || strcmp(p, "sh") == 0 ||
-            strcmp(p, "cmd") == 0 || strcmp(p, "powershell") == 0)
-            return src->bin;
-        /* Strip leading ./ or .\\ */
-        if (p[0] == '.' && (p[1] == '/' || p[1] == '\\')) p += 2;
-        return p;
-    }
-    return src->bin;
+/* ── Install marker (.ogp_installed) ─────────────────────────── */
+
+static void marker_path(const Source *src, char *buf, size_t buflen) {
+    char *gdir = games_dir();
+    snprintf(buf, buflen, "%s/%s/.ogp_installed", gdir, src->dir);
+    free(gdir);
+}
+
+void mark_installed(const Source *src) {
+    if (!src->dir) return;
+    char path[PATHBUF];
+    marker_path(src, path, sizeof(path));
+    FILE *f = fopen(path, "w");
+    if (f) fclose(f);
+}
+
+void mark_uninstalled(const Source *src) {
+    if (!src->dir) return;
+    char path[PATHBUF];
+    marker_path(src, path, sizeof(path));
+    remove(path);
 }
 
 int is_git_cloned_not_ready(const Game *g) {
     const Source *src = default_source(g);
     if (!src || src->method != ACQUIRE_GIT) return 0;
-    const char *check = source_check_path(src);
-    if (!check) return 0;
     char *gdir = games_dir();
-    char git_path[PATHBUF], bin_path[PATHBUF];
+    char git_path[PATHBUF], marker[PATHBUF];
     snprintf(git_path, sizeof(git_path), "%s/%s/.git", gdir, src->dir);
-    snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->dir, check);
     free(gdir);
-    return plat_file_exists(git_path) && !plat_file_exists(bin_path);
+    marker_path(src, marker, sizeof(marker));
+    return plat_file_exists(git_path) && !plat_file_exists(marker);
 }
 
 int is_installed(const Game *g) {
@@ -120,16 +125,59 @@ int is_installed(const Game *g) {
     if (!src) return 0;
 
     if (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD) {
-        const char *check = source_check_path(src);
-        if (!check) return 0;
+        if (!src->dir) return 0;
         char *gdir = games_dir();
-        char path[PATHBUF];
-        snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->dir, check);
+        char marker[PATHBUF], dir_path[PATHBUF];
+        snprintf(marker, sizeof(marker), "%s/%s/.ogp_installed", gdir, src->dir);
+        snprintf(dir_path, sizeof(dir_path), "%s/%s", gdir, src->dir);
         free(gdir);
-        return plat_file_exists(path);
+
+        if (plat_file_exists(marker)) return 1;
+
+        /* Migration: if game dir exists but no marker, write one.
+           Covers games installed before marker system was added. */
+        if (plat_file_exists(dir_path)) {
+            mark_installed(src);
+            return 1;
+        }
+        return 0;
     }
     /* cargo — check bin on PATH */
     return which(src->bin);
+}
+
+/* ── Play binary resolution ──────────────────────────────────── */
+
+/* Extract the basename from a path (e.g., "./bin/foo" → "foo") */
+static const char *basename_of(const char *path) {
+    const char *last_slash = strrchr(path, '/');
+    const char *last_bslash = strrchr(path, '\\');
+    if (last_bslash && (!last_slash || last_bslash > last_slash))
+        last_slash = last_bslash;
+    return last_slash ? last_slash + 1 : path;
+}
+
+char *resolve_play_binary(const Source *src, const char *cwd) {
+    if (!src->play_cmd || !src->play_cmd[0]) return NULL;
+
+    const char *cmd0 = src->play_cmd[0];
+
+    /* Skip wrapper commands — can't resolve these */
+    if (strcmp(cmd0, "bash") == 0 || strcmp(cmd0, "sh") == 0 ||
+        strcmp(cmd0, "cmd") == 0 || strcmp(cmd0, "powershell") == 0)
+        return NULL;
+
+    /* Check if the binary exists at the specified path */
+    if (cwd) {
+        char full[PATHBUF];
+        snprintf(full, sizeof(full), "%s/%s", cwd, cmd0);
+        if (plat_file_exists(full)) return NULL; /* path is fine */
+    }
+
+    /* Binary not found — search the game directory */
+    const char *name = basename_of(cmd0);
+    if (!cwd || !name[0]) return NULL;
+    return plat_find_executable(cwd, name);
 }
 
 /* ── Install method tracking ──────────────────────────────────── */

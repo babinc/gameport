@@ -113,11 +113,16 @@ static void launch_game(App *app, Screen *scr, int *w, int *h) {
     const char *cwd = source_cwd(src, cwd_buf, sizeof(cwd_buf));
     int ci = 0;
 
+    /* Try to resolve the play binary; if the hardcoded path is wrong,
+       search the game directory for the executable */
+    char *resolved = resolve_play_binary(src, cwd);
+
     if (src->play_cmd && src->play_cmd[0]) {
         for (int i = 0; src->play_cmd[i] && ci < 15; i++)
             cmd[ci++] = src->play_cmd[i];
+        if (resolved) cmd[0] = resolved; /* override with found path */
     } else {
-        cmd[ci++] = src->bin;
+        cmd[ci++] = resolved ? resolved : src->bin;
     }
     cmd[ci] = NULL;
 
@@ -140,6 +145,7 @@ static void launch_game(App *app, Screen *scr, int *w, int *h) {
         snprintf(msg, sizeof(msg), "Playing %s...", g->name);
         app_set_message(app, msg, 1);
     }
+    free(resolved);
 }
 
 /* ── Install/uninstall handler ───────────────────────────────── */
@@ -445,15 +451,18 @@ static void close_panel(App *app) {
     int ok = app->child.ok;
     const Game *g = &GAMES[app->active_game];
 
-    /* Track install method */
+    /* Track install method + write marker */
     if (ok) {
         int was_installing = (strcmp(app->panel_label, "INSTALLING") == 0);
-        if (was_installing) {
-            int si = app->source_selected;
-            if (si >= 0 && si < g->num_sources)
-                save_install_method(g->name, g->sources[si].label);
-        } else {
+        int was_removing = (strcmp(app->panel_label, "REMOVING") == 0);
+        int si = app->source_selected;
+        const Source *src = (si >= 0 && si < g->num_sources) ? &g->sources[si] : NULL;
+        if (was_installing && src) {
+            save_install_method(g->name, src->label);
+            mark_installed(src);
+        } else if (was_removing) {
             clear_install_method(g->name);
+            if (src) mark_uninstalled(src);
         }
     }
 

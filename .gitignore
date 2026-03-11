@@ -1,4 +1,4 @@
 *.o
-gameport
+open-game-portal
 build/
 cmake_build/

@@ -484,6 +484,34 @@ long long plat_dir_size(const char *path) {
     return total;
 }
 
+static char *find_exec_impl(const char *dir, const char *name, int depth) {
+    if (depth > 4) return NULL;
+    WIN32_FIND_DATAA fd;
+    char pattern[MAX_PATH];
+    snprintf(pattern, sizeof(pattern), "%s\\*", dir);
+    HANDLE h = FindFirstFileA(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return NULL;
+    do {
+        if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
+            continue;
+        char child[MAX_PATH];
+        snprintf(child, sizeof(child), "%s\\%s", dir, fd.cFileName);
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            char *found = find_exec_impl(child, name, depth + 1);
+            if (found) { FindClose(h); return found; }
+        } else if (_stricmp(fd.cFileName, name) == 0) {
+            FindClose(h);
+            return strdup(child);
+        }
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+    return NULL;
+}
+
+char *plat_find_executable(const char *dir, const char *name) {
+    return find_exec_impl(dir, name, 0);
+}
+
 /* ── Misc ────────────────────────────────────────────────────── */
 
 void plat_sleep_ms(int ms) {

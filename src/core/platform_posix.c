@@ -324,6 +324,34 @@ long long plat_dir_size(const char *path) {
     return total;
 }
 
+static char *find_exec_impl(const char *dir, const char *name, int depth) {
+    if (depth > 4) return NULL;
+    DIR *d = opendir(dir);
+    if (!d) return NULL;
+    struct dirent *ent;
+    while ((ent = readdir(d)) != NULL) {
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+            continue;
+        char child[PATHBUF];
+        snprintf(child, sizeof(child), "%s/%s", dir, ent->d_name);
+        struct stat st;
+        if (stat(child, &st) != 0) continue;
+        if (S_ISDIR(st.st_mode)) {
+            char *found = find_exec_impl(child, name, depth + 1);
+            if (found) { closedir(d); return found; }
+        } else if (strcmp(ent->d_name, name) == 0 && access(child, X_OK) == 0) {
+            closedir(d);
+            return strdup(child);
+        }
+    }
+    closedir(d);
+    return NULL;
+}
+
+char *plat_find_executable(const char *dir, const char *name) {
+    return find_exec_impl(dir, name, 0);
+}
+
 /* ── Misc ────────────────────────────────────────────────────── */
 
 void plat_sleep_ms(int ms) {

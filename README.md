@@ -1,4 +1,4 @@
-# GamePort
+# Open Game Portal
 
 A terminal UI for discovering, installing, and launching open-source games.
 
@@ -8,7 +8,7 @@ A terminal UI for discovering, installing, and launching open-source games.
 - Search, browse by category, view controls
 - Tracks installed games, shows disk usage
 
-![GamePort screenshot](https://raw.githubusercontent.com/babinc/gameport/master/screenshot.png)
+![Open Game Portal screenshot](https://raw.githubusercontent.com/babinc/gameport/master/screenshot.png)
 
 ## Install
 
@@ -16,11 +16,11 @@ A terminal UI for discovering, installing, and launching open-source games.
 
 Download the latest release for your platform from [Releases](https://github.com/babinc/gameport/releases):
 
-- `gameport-linux-x86_64.tar.gz`
-- `gameport-macos-arm64.tar.gz`
-- `gameport-windows-x86_64.zip`
+- `open-game-portal-linux-x86_64.tar.gz`
+- `open-game-portal-macos-arm64.tar.gz`
+- `open-game-portal-windows-x86_64.zip`
 
-Extract and run `gameport`.
+Extract and run `open-game-portal`.
 
 ### From source
 
@@ -31,7 +31,7 @@ git clone https://github.com/babinc/gameport.git
 cd gameport
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/gameport
+./build/open-game-portal
 ```
 
 ### Optional dependencies
@@ -42,7 +42,7 @@ Games are installed on demand. Depending on the game, you may need:
 - **cargo** installs Rust-based games via `cargo install`
 - **git + cmake + make** builds games from source
 
-GamePort shows which tools you have as badges in the header.
+Open Game Portal shows which tools you have as badges in the header.
 
 ## Usage
 

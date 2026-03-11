@@ -189,14 +189,14 @@ static Color header_color(unsigned long tick, int col) {
 
 static void render_header(Screen *s, App *app) {
     /* Row 0: "GAME PORTAL" rainbow + toolchain badges + game count */
-    const char *title = "GAME PORTAL";
+    const char *title = "OPEN GAME PORTAL";
     int tx = 2;
     for (int i = 0; title[i]; i++) {
         Color clr = header_color(app->tick, i);
         scr_put(s, tx + i, 0, (uint32_t)title[i], clr, CLR_BG, 1);
     }
-#ifdef GAMEPORT_VERSION
-    const char *ver = " v" GAMEPORT_VERSION;
+#ifdef OGP_VERSION
+    const char *ver = " v" OGP_VERSION;
 #else
     const char *ver = "";
 #endif
