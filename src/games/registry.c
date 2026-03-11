@@ -50,6 +50,7 @@ const Game *game_hedgewars(void);
 const Game *game_uqm(void);
 const Game *game_mindustry(void);
 const Game *game_openclonk(void);
+const Game *game_zquest_classic(void);
 
 typedef const Game *(*GameFn)(void);
 
@@ -103,6 +104,7 @@ static const GameFn game_fns[] = {
     game_uqm,
     game_mindustry,
     game_openclonk,
+    game_zquest_classic,
 };
 
 #define MAX_GAMES 128
