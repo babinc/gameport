@@ -1,4 +1,4 @@
-#include "../catalog.h"
+#include "../core/catalog.h"
 
 static const char *keys[] = {
     "Mouse|Point, click, drag to build",

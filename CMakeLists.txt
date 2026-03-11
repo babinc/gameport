@@ -7,11 +7,11 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 # Common sources
 set(COMMON_SRC
     src/main.c
-    src/term.c
-    src/ui.c
-    src/catalog.c
-    src/install.c
-    src/util.c
+    src/ui/term.c
+    src/ui/ui.c
+    src/core/catalog.c
+    src/core/install.c
+    src/core/util.c
 )
 
 # Per-game sources
@@ -19,9 +19,9 @@ file(GLOB GAME_SRC src/games/*.c)
 
 # Platform layer
 if(WIN32)
-    set(PLATFORM_SRC src/platform_win32.c)
+    set(PLATFORM_SRC src/core/platform_win32.c)
 else()
-    set(PLATFORM_SRC src/platform_posix.c)
+    set(PLATFORM_SRC src/core/platform_posix.c)
 endif()
 
 add_executable(gameport ${COMMON_SRC} ${PLATFORM_SRC} ${GAME_SRC})

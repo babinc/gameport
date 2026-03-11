@@ -2,9 +2,9 @@
 #define UI_H
 
 #include "term.h"
-#include "catalog.h"
-#include "install.h"
-#include "util.h"
+#include "../core/catalog.h"
+#include "../core/install.h"
+#include "../core/util.h"
 
 /* ── App modes ────────────────────────────────────────────────── */
 typedef enum {

@@ -21,18 +21,20 @@ Version is set in `CMakeLists.txt` via `project(VERSION X.Y.Z)` and passed as `G
 
 ```
 src/
-  main.c           — event loop, install/uninstall/launch logic
-  ui.c / ui.h      — rendering, App state, filtering, categories
-  catalog.c/.h     — Game/Source structs, platform detection, shared constants
-  util.c / util.h  — toolchain detection, path helpers, install tracking
-  install.c/.h     — ChildProc, LineBuf, child process management
-  term.c / term.h  — terminal abstraction (Screen, KeyEvent, colors)
-  platform.h       — cross-platform API (PlatProc, filesystem, terminal)
-  platform_posix.c — POSIX implementation
-  platform_win32.c — Windows implementation
+  main.c              — event loop, install/uninstall/launch logic
+  core/
+    platform.h         — cross-platform API (PlatProc, filesystem, terminal, PATHBUF)
+    platform_posix.c   — POSIX implementation
+    platform_win32.c   — Windows implementation
+    catalog.c/.h       — Game/Source structs, platform detection, shared constants
+    install.c/.h       — ChildProc, LineBuf, child process management
+    util.c/.h          — toolchain detection, path helpers, install tracking
+  ui/
+    ui.c / ui.h        — rendering, App state, filtering, categories
+    term.c / term.h    — terminal abstraction (Screen, KeyEvent, colors)
   games/
-    registry.c     — master game list (function pointer table)
-    *.c            — one file per game (static data, no logic)
+    registry.c         — master game list (function pointer table)
+    *.c                — one file per game (static data, no logic)
 ```
 
 ## Key Conventions
@@ -47,7 +49,7 @@ src/
 
 Every game file follows the same pattern:
 ```c
-#include "../catalog.h"
+#include "../core/catalog.h"
 static const char *keys[] = { "Key|Action", ..., NULL };
 static const Source sources[] = {{ .method = ..., .label = "...", ... }};
 static const Game game_data = { .name = "...", .icon = "X", ... };

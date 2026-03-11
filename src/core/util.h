@@ -35,6 +35,6 @@ void  clear_install_method(const char *game_name);
 void  sanitize_name(const char *in, char *out, size_t outlen);
 
 /* ── Size formatting ──────────────────────────────────────────── */
-void  format_size(unsigned long bytes, char *buf, int buflen);
+void  format_size(long long bytes, char *buf, int buflen);
 
 #endif

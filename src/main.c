@@ -7,12 +7,12 @@
 #include <signal.h>
 #endif
 
-#include "term.h"
-#include "ui.h"
-#include "catalog.h"
-#include "install.h"
-#include "util.h"
-#include "platform.h"
+#include "ui/term.h"
+#include "ui/ui.h"
+#include "core/catalog.h"
+#include "core/install.h"
+#include "core/util.h"
+#include "core/platform.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,6 +64,12 @@ static void chain_clear(App *app) {
     free(app->next_cwd); app->next_cwd = NULL;
 }
 
+/* ── Forward declarations ─────────────────────────────────────── */
+
+static void begin_install(App *app, const Source *src);
+static void begin_uninstall(App *app, const Source *src);
+static int  try_install_source(App *app, Screen *scr, int *w, int *h);
+
 /* ── Source cwd helper ─────────────────────────────────────────── */
 
 /* Fill buf with the game directory for local-install sources; return buf or NULL */
@@ -75,6 +81,111 @@ static const char *source_cwd(const Source *src, char *buf, size_t buflen) {
         return buf;
     }
     return NULL;
+}
+
+/* ── Game launch helper ──────────────────────────────────────── */
+
+static void launch_game(App *app, Screen *scr, int *w, int *h) {
+    int gi = app->filtered[app->selected];
+    if (app->game_running) {
+        app_set_message(app, "A game is already running.", 0);
+        return;
+    }
+    app->active_game = gi;
+    const Game *g = &GAMES[gi];
+    if (app->cloned[gi]) {
+        app_set_message(app, "Cloned but not built. Press [i] to build.", 0);
+        return;
+    }
+    if (!app->installed[gi]) {
+        app_set_message(app, "Not installed. Press [i] to install.", 0);
+        return;
+    }
+    const Source *src = default_source(g);
+    if (!src) return;
+
+    int is_terminal = (strcmp(g->engine, "crossterm") == 0 ||
+                       strcmp(g->engine, "ratatui") == 0 ||
+                       strcmp(g->engine, "ncurses") == 0);
+
+    const char *cmd[16];
+    char cwd_buf[PATHBUF];
+    const char *cwd = source_cwd(src, cwd_buf, sizeof(cwd_buf));
+    int ci = 0;
+
+    if (src->play_cmd && src->play_cmd[0]) {
+        for (int i = 0; src->play_cmd[i] && ci < 15; i++)
+            cmd[ci++] = src->play_cmd[i];
+    } else {
+        cmd[ci++] = src->bin;
+    }
+    cmd[ci] = NULL;
+
+    if (is_terminal) {
+        screen_resize(scr, *w, *h);
+        int ok = run_visible(cmd, cwd);
+        term_get_size(w, h);
+        screen_resize(scr, *w, *h);
+        if (!ok) {
+            char msg[128];
+            snprintf(msg, sizeof(msg), "%s exited with error", g->name);
+            app_set_message(app, msg, 0);
+        } else {
+            app_clear_message(app);
+        }
+    } else {
+        child_start(&app->child, cmd, cwd);
+        app->game_running = 1;
+        char msg[128];
+        snprintf(msg, sizeof(msg), "Playing %s...", g->name);
+        app_set_message(app, msg, 1);
+    }
+}
+
+/* ── Install/uninstall handler ───────────────────────────────── */
+
+static void handle_install_key(App *app, Screen *scr, int *w, int *h, int installing) {
+    if (app->game_running) {
+        app_set_message(app, "A game is running. Close it first.", 0);
+        return;
+    }
+    if (app->filter_count == 0) return;
+    int idx = app->filtered[app->selected];
+    if (IS_HEADER(idx)) return;
+
+    app->active_game = idx;
+    const Game *g = &GAMES[idx];
+    const Source *src = default_source(g);
+
+    if (installing && !game_supports_platform(g)) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "%s not supported on %s", g->name, current_platform());
+        app_set_message(app, msg, 0);
+    } else if (!src) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "%s has no install source", g->name);
+        app_set_message(app, msg, 0);
+    } else if (installing && app->installed[idx]) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "%s already installed!", g->name);
+        app_set_message(app, msg, 1);
+    } else if (!installing && !app->installed[idx]) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "%s not installed", g->name);
+        app_set_message(app, msg, 0);
+    } else if (installing) {
+        int dsi = default_source_index(g);
+        app->source_selected = dsi >= 0 ? dsi : 0;
+        if (count_platform_sources(g) > 1) {
+            app->mode = MODE_SOURCE_SELECT;
+        } else {
+            try_install_source(app, scr, w, h);
+        }
+    } else {
+        int dsi = default_source_index(g);
+        app->source_selected = dsi >= 0 ? dsi : 0;
+        begin_uninstall(app, src);
+    }
 }
 
 /* ── Helpers to build & start install/uninstall ───────────────── */
@@ -91,7 +202,7 @@ static void start_cargo_uninstall(App *app, const Source *src) {
 
 static void start_git_acquire(App *app, const Source *src) {
     char *gdir = games_dir();
-    char game_path[1024], git_path[1030];
+    char game_path[PATHBUF], git_path[PATHBUF + 6];
     snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->dir);
     snprintf(git_path, sizeof(git_path), "%s/.git", game_path);
 
@@ -120,7 +231,7 @@ static void start_git_acquire(App *app, const Source *src) {
 
 static void start_local_remove(App *app, const Source *src) {
     char *gdir = games_dir();
-    char path[1024];
+    char path[PATHBUF];
     snprintf(path, sizeof(path), "%s/%s", gdir, src->dir);
     free(gdir);
 
@@ -142,7 +253,7 @@ static void start_local_remove(App *app, const Source *src) {
 
 static void start_download_acquire(App *app, const Source *src) {
     char *gdir = games_dir();
-    char game_path[1024];
+    char game_path[PATHBUF];
     snprintf(game_path, sizeof(game_path), "%s/%s", gdir, src->dir);
 
     /* Chain the build command if any */
@@ -246,6 +357,7 @@ static void begin_install(App *app, const Source *src) {
     case ACQUIRE_CARGO:    start_cargo_install(app, src);    break;
     case ACQUIRE_GIT:      start_git_acquire(app, src);      break;
     case ACQUIRE_DOWNLOAD: start_download_acquire(app, src); break;
+    default: break;
     }
     app->panel_label = "INSTALLING";
     app->mode = MODE_INSTALLING;
@@ -258,7 +370,8 @@ static void begin_uninstall(App *app, const Source *src) {
     switch (src->method) {
     case ACQUIRE_CARGO:    start_cargo_uninstall(app, src); break;
     case ACQUIRE_GIT:      start_local_remove(app, src);      break;
-    case ACQUIRE_DOWNLOAD: start_local_remove(app, src);      break;  /* same: rm dir */
+    case ACQUIRE_DOWNLOAD: start_local_remove(app, src);      break;
+    default: break;
     }
     app->panel_label = "REMOVING";
     app->mode = MODE_INSTALLING;
@@ -270,7 +383,7 @@ static void begin_uninstall(App *app, const Source *src) {
 
 /* Returns a static buffer with the log file path (valid until next call) */
 static const char *save_log_to_file(App *app) {
-    static char path[1024];
+    static char path[PATHBUF];
     char *ldir = logs_dir();
     time_t now = time(NULL);
     struct tm *tm = localtime(&now);
@@ -349,7 +462,7 @@ static void close_panel(App *app) {
 
     /* Append log path to output so it shows in [L] view */
     if (log_path) {
-        char note[1024 + 16]; /* path (max 1024) + "Log saved: " prefix */
+        char note[PATHBUF + 16];
         snprintf(note, sizeof(note), "Log saved: %s", log_path);
         linebuf_push(&app->child.output, note);
     }
@@ -636,68 +749,13 @@ int main(void) {
             case KEY_ENTER: {
                 if (app.filter_count == 0) break;
                 int gi = app.filtered[app.selected];
-                /* Toggle category header */
                 if (IS_HEADER(gi)) {
                     int ci = HEADER_CAT(gi);
                     app.cat_collapsed[ci] = !app.cat_collapsed[ci];
                     app_rebuild_filter(&app);
                     break;
                 }
-                if (app.game_running) {
-                    app_set_message(&app, "A game is already running.", 0);
-                    break;
-                }
-                app.active_game = gi;
-                const Game *g = &GAMES[gi];
-                if (app.cloned[gi]) {
-                    app_set_message(&app, "Cloned but not built. Press [i] to build.", 0);
-                } else if (!app.installed[gi]) {
-                    app_set_message(&app, "Not installed. Press [i] to install.", 0);
-                } else {
-                    const Source *src = default_source(g);
-                    if (!src) break;
-
-                    /* Terminal games need the full terminal */
-                    int is_terminal = (strcmp(g->engine, "crossterm") == 0 ||
-                                       strcmp(g->engine, "ratatui") == 0 ||
-                                       strcmp(g->engine, "ncurses") == 0);
-                    /* Build command and cwd (shared by both paths) */
-                    const char *cmd[16];
-                    char cwd_buf[1024];
-                    const char *cwd = source_cwd(src, cwd_buf, sizeof(cwd_buf));
-                    int ci = 0;
-
-                    if (src->play_cmd && src->play_cmd[0]) {
-                        for (int i = 0; src->play_cmd[i] && ci < 15; i++)
-                            cmd[ci++] = src->play_cmd[i];
-                    } else {
-                        cmd[ci++] = src->bin;
-                    }
-                    cmd[ci] = NULL;
-
-                    if (is_terminal) {
-                        /* Need full redraw after */
-                        screen_resize(scr, w, h);
-                        int ok = run_visible(cmd, cwd);
-                        term_get_size(&w, &h);
-                        screen_resize(scr, w, h);
-                        if (!ok) {
-                            char msg[128];
-                            snprintf(msg, sizeof(msg), "%s exited with error", g->name);
-                            app_set_message(&app, msg, 0);
-                        } else {
-                            app_clear_message(&app);
-                        }
-                    } else {
-                        /* Graphical games run in background */
-                        child_start(&app.child, cmd, cwd);
-                        app.active_game = gi;
-                        app.game_running = 1;
-                        char msg[128];
-                        snprintf(msg, sizeof(msg), "Playing %s...", g->name);
-                        app_set_message(&app, msg, 1);
-                    }
-                }
+                launch_game(&app, scr, &w, &h);
                 break;
             }
             case KEY_CHAR: {
@@ -764,49 +822,7 @@ int main(void) {
                         app.cat_collapsed[ci] = 0;
                     app_rebuild_filter(&app);
                 } else if (key.ch == 'i' || key.ch == 'd') {
-                    if (app.game_running) {
-                        app_set_message(&app, "A game is running. Close it first.", 0);
-                        break;
-                    }
-                    if (app.filter_count == 0) break;
-                    int idx = app.filtered[app.selected];
-                    if (IS_HEADER(idx)) break;
-                    int installing = (key.ch == 'i');
-                    app.active_game = idx;
-                    const Game *g = &GAMES[idx];
-                    const Source *src = default_source(g);
-
-                    if (installing && !game_supports_platform(g)) {
-                        char msg[128];
-                        snprintf(msg, sizeof(msg), "%s not supported on %s",
-                                 g->name, current_platform());
-                        app_set_message(&app, msg, 0);
-                    } else if (!src) {
-                        char msg[128];
-                        snprintf(msg, sizeof(msg), "%s has no install source", g->name);
-                        app_set_message(&app, msg, 0);
-                    } else if (installing && app.installed[idx]) {
-                        char msg[128];
-                        snprintf(msg, sizeof(msg), "%s already installed!", g->name);
-                        app_set_message(&app, msg, 1);
-                    } else if (!installing && !app.installed[idx]) {
-                        char msg[128];
-                        snprintf(msg, sizeof(msg), "%s not installed", g->name);
-                        app_set_message(&app, msg, 0);
-                    } else if (installing) {
-                        int dsi = default_source_index(g);
-                        app.source_selected = dsi >= 0 ? dsi : 0;
-                        if (count_platform_sources(g) > 1) {
-                            app.mode = MODE_SOURCE_SELECT;
-                        } else {
-                            try_install_source(&app, scr, &w, &h);
-                        }
-                    } else {
-                        /* Uninstall — use platform-appropriate source */
-                        int dsi = default_source_index(g);
-                        app.source_selected = dsi >= 0 ? dsi : 0;
-                        begin_uninstall(&app, src);
-                    }
+                    handle_install_key(&app, scr, &w, &h, key.ch == 'i');
                 }
                 break;
             }

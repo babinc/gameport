@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "../core/platform.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -133,7 +134,7 @@ void app_ensure_disk_size(App *app, int gi) {
     const Source *src = default_source(&GAMES[gi]);
     if (src && (src->method == ACQUIRE_GIT || src->method == ACQUIRE_DOWNLOAD)) {
         char *gdir = games_dir();
-        char path[1024];
+        char path[PATHBUF];
         snprintf(path, sizeof(path), "%s/%s", gdir, src->dir);
         free(gdir);
         app->disk_sizes[gi] = plat_dir_size(path);
@@ -628,13 +629,7 @@ static void render_details(Screen *s, App *app, int x, int y, int w, int h) {
     /* Disk size (computed outside render by main loop) */
     if (installed && row < y + h - 2 && app->disk_sizes[gi] > 0) {
         char sbuf[32];
-        long long sz = app->disk_sizes[gi];
-        if (sz >= 1024LL * 1024 * 1024)
-            snprintf(sbuf, sizeof(sbuf), "%.1f GB", (double)sz / (1024.0 * 1024 * 1024));
-        else if (sz >= 1024LL * 1024)
-            snprintf(sbuf, sizeof(sbuf), "%.1f MB", (double)sz / (1024.0 * 1024));
-        else
-            snprintf(sbuf, sizeof(sbuf), "%.1f KB", (double)sz / 1024.0);
+        format_size(app->disk_sizes[gi], sbuf, sizeof(sbuf));
         detail_row(s, ix, row, iw, "Size      ", sbuf, CLR_DIMWHITE);
         row++;
     }
@@ -900,6 +895,16 @@ static void render_source_select(Screen *s, App *app, int x, int y, int w, int h
 
 /* ── Footer (row h-2 = separator, row h-1 = keys + status) ──── */
 
+/* Draw a "key label" pair and advance cx */
+static int footer_key(Screen *s, int cx, int y, int w, const char *key, const char *label, Color key_color) {
+    if (cx > 1)
+        cx += scr_str_n(s, cx, y, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
+    cx += scr_str_n(s, cx, y, key, w - cx - 1, key_color, CLR_BG, 1);
+    cx += scr_str_n(s, cx, y, " ", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+    cx += scr_str_n(s, cx, y, label, w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+    return cx;
+}
+
 static void render_footer(Screen *s, App *app, int y) {
     int w = s->w;
 
@@ -914,76 +919,39 @@ static void render_footer(Screen *s, App *app, int y) {
 
     if (app->mode == MODE_INSTALLING || app->mode == MODE_RUNNING) {
         if (app->child.done) {
-            cx += scr_str_n(s, cx, ky, "Any key", w - 2, CLR_CYAN, CLR_BG, 1);
-            cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+            cx = footer_key(s, cx, ky, w, "Any key", "close", CLR_CYAN);
         } else {
-            cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
-            cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-            if (app->mode == MODE_RUNNING) {
-                cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-                cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
-                cx += scr_str_n(s, cx, ky, " stop", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-            }
+            cx = footer_key(s, cx, ky, w, "j/k", "scroll", CLR_CYAN);
+            if (app->mode == MODE_RUNNING)
+                cx = footer_key(s, cx, ky, w, "Esc", "stop", CLR_RED);
         }
     } else if (app->mode == MODE_VIEWLOG) {
-        cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "PgUp/PgDn", w - cx - 1, CLR_CYAN, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " page", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx = footer_key(s, cx, ky, w, "j/k", "scroll", CLR_CYAN);
+        cx = footer_key(s, cx, ky, w, "PgUp/PgDn", "page", CLR_CYAN);
+        cx = footer_key(s, cx, ky, w, "Esc", "close", CLR_RED);
     } else if (app->mode == MODE_CONTROLS) {
-        /* Same as VIEWLOG minus PgUp/PgDn */
-        cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "Up/Down", w - cx - 1, CLR_CYAN, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " scroll", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " close", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx = footer_key(s, cx, ky, w, "j/k", "scroll", CLR_CYAN);
+        cx = footer_key(s, cx, ky, w, "Up/Down", "scroll", CLR_CYAN);
+        cx = footer_key(s, cx, ky, w, "Esc", "close", CLR_RED);
     } else if (app->mode == MODE_SOURCE_SELECT) {
-        cx += scr_str_n(s, cx, ky, "j/k", w - 2, CLR_CYAN, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " select", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "Enter", w - cx - 1, CLR_GREEN, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " confirm", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "Esc", w - cx - 1, CLR_RED, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " cancel", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx = footer_key(s, cx, ky, w, "j/k", "select", CLR_CYAN);
+        cx = footer_key(s, cx, ky, w, "Enter", "confirm", CLR_GREEN);
+        cx = footer_key(s, cx, ky, w, "Esc", "cancel", CLR_RED);
     } else if (app->mode == MODE_SEARCH) {
-        cx += scr_str_n(s, cx, ky, "Type", w - cx - 1, CLR_CYAN, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " to search", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "Enter/Esc", w - cx - 1, CLR_YELLOW, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " done", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        cx = footer_key(s, cx, ky, w, "Type", "to search", CLR_CYAN);
+        cx = footer_key(s, cx, ky, w, "Enter/Esc", "done", CLR_YELLOW);
     } else {
-        /* Normal mode keys */
-        struct { const char *key; const char *label; Color color; } keys[] = {
-            {"j/k", "nav", CLR_CYAN},
-            {"h/l", "cat", (Color){180,140,220}},
-            {"p", "platform", (Color){220,180,50}},
-            {"/", "search", CLR_YELLOW},
-            {"Enter", "play", CLR_GREEN},
-            {"i", "install", CLR_YELLOW},
-            {"d", "remove", CLR_RED},
-            {"c", "keys", (Color){220,180,100}},
-            {"w", "web", (Color){100,180,255}},
-            {NULL, NULL, CLR_NONE},
-        };
-        for (int ki = 0; keys[ki].key; ki++) {
-            if (ki > 0) {
-                cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-            }
-            cx += scr_str_n(s, cx, ky, keys[ki].key, w - cx - 1, keys[ki].color, CLR_BG, 1);
-            cx += scr_str_n(s, cx, ky, " ", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-            cx += scr_str_n(s, cx, ky, keys[ki].label, w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
-        }
-        cx += scr_str_n(s, cx, ky, "  ", w - cx - 1, CLR_BG, CLR_BG, 0);
-        cx += scr_str_n(s, cx, ky, "q", w - cx - 1, (Color){180,80,80}, CLR_BG, 1);
-        cx += scr_str_n(s, cx, ky, " quit", w - cx - 1, CLR_DARKGRAY, CLR_BG, 0);
+        /* Normal mode */
+        cx = footer_key(s, cx, ky, w, "j/k", "nav", CLR_CYAN);
+        cx = footer_key(s, cx, ky, w, "h/l", "cat", (Color){180,140,220});
+        cx = footer_key(s, cx, ky, w, "p", "platform", (Color){220,180,50});
+        cx = footer_key(s, cx, ky, w, "/", "search", CLR_YELLOW);
+        cx = footer_key(s, cx, ky, w, "Enter", "play", CLR_GREEN);
+        cx = footer_key(s, cx, ky, w, "i", "install", CLR_YELLOW);
+        cx = footer_key(s, cx, ky, w, "d", "remove", CLR_RED);
+        cx = footer_key(s, cx, ky, w, "c", "keys", (Color){220,180,100});
+        cx = footer_key(s, cx, ky, w, "w", "web", (Color){100,180,255});
+        cx = footer_key(s, cx, ky, w, "q", "quit", (Color){180,80,80});
     }
 
     /* Right side: status message */

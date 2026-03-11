@@ -3,7 +3,7 @@
 #endif
 #include "install.h"
 #include "platform.h"
-#include "term.h"
+#include "../ui/term.h"
 #include "util.h"
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-#include "../catalog.h"
+#include "../core/catalog.h"
 
 static const char *keys[] = {
     "h j k l / Arrows|Move (cardinal)",

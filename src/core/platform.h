@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+/* ── Shared constants ──────────────────────────────────────────── */
+#define PATHBUF 1024
+
 /* ── MSVC compatibility ──────────────────────────────────────── */
 #ifdef _MSC_VER
 #define strdup  _strdup

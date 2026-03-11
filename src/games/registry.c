@@ -1,4 +1,4 @@
-#include "../catalog.h"
+#include "../core/catalog.h"
 
 /* Game accessor declarations */
 const Game *game_minesweeper(void);

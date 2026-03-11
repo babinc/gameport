@@ -37,8 +37,8 @@ int has_runtime(const Toolchains *tc, AcquireMethod method) {
     case ACQUIRE_CARGO:    return tc->cargo;
     case ACQUIRE_GIT:      return tc->git;
     case ACQUIRE_DOWNLOAD: return tc->curl;
+    default: return 1;
     }
-    return 1;
 }
 
 const char *runtime_install_hint(AcquireMethod method) {
@@ -46,8 +46,8 @@ const char *runtime_install_hint(AcquireMethod method) {
     case ACQUIRE_CARGO:    return "Install Rust: https://rustup.rs";
     case ACQUIRE_GIT:      return "Install Git: https://git-scm.com";
     case ACQUIRE_DOWNLOAD: return "Install curl: https://curl.se";
+    default: return "Unknown runtime";
     }
-    return "Unknown runtime";
 }
 
 /* ── Path helpers ─────────────────────────────────────────────── */
@@ -72,7 +72,7 @@ static void data_base(char *buf, size_t buflen) {
 static char *sub_dir(const char *name) {
     char base[512];
     data_base(base, sizeof(base));
-    char buf[1024];
+    char buf[PATHBUF];
     snprintf(buf, sizeof(buf), "%s/%s", base, name);
     plat_mkdir_p(buf);
     return strdup(buf);
@@ -108,7 +108,7 @@ int is_git_cloned_not_ready(const Game *g) {
     const char *check = source_check_path(src);
     if (!check) return 0;
     char *gdir = games_dir();
-    char git_path[1024], bin_path[1024];
+    char git_path[PATHBUF], bin_path[PATHBUF];
     snprintf(git_path, sizeof(git_path), "%s/%s/.git", gdir, src->dir);
     snprintf(bin_path, sizeof(bin_path), "%s/%s/%s", gdir, src->dir, check);
     free(gdir);
@@ -123,7 +123,7 @@ int is_installed(const Game *g) {
         const char *check = source_check_path(src);
         if (!check) return 0;
         char *gdir = games_dir();
-        char path[1024];
+        char path[PATHBUF];
         snprintf(path, sizeof(path), "%s/%s/%s", gdir, src->dir, check);
         free(gdir);
         return plat_file_exists(path);
@@ -143,7 +143,7 @@ static void meta_path(const char *game_name, char *buf, size_t buflen) {
 }
 
 void save_install_method(const char *game_name, const char *label) {
-    char path[1024];
+    char path[PATHBUF];
     meta_path(game_name, path, sizeof(path));
     FILE *f = fopen(path, "w");
     if (f) {
@@ -153,7 +153,7 @@ void save_install_method(const char *game_name, const char *label) {
 }
 
 char *load_install_method(const char *game_name) {
-    char path[1024];
+    char path[PATHBUF];
     meta_path(game_name, path, sizeof(path));
     FILE *f = fopen(path, "r");
     if (!f) return NULL;
@@ -170,7 +170,7 @@ char *load_install_method(const char *game_name) {
 }
 
 void clear_install_method(const char *game_name) {
-    char path[1024];
+    char path[PATHBUF];
     meta_path(game_name, path, sizeof(path));
     remove(path);
 }
@@ -187,11 +187,13 @@ void sanitize_name(const char *in, char *out, size_t outlen) {
 
 /* ── Size formatting ──────────────────────────────────────────── */
 
-void format_size(unsigned long bytes, char *buf, int buflen) {
-    if (bytes >= 1048576)
-        snprintf(buf, (size_t)buflen, "%.1f MB", (double)bytes / 1048576.0);
+void format_size(long long bytes, char *buf, int buflen) {
+    if (bytes >= 1024LL * 1024 * 1024)
+        snprintf(buf, (size_t)buflen, "%.1f GB", (double)bytes / (1024.0 * 1024 * 1024));
+    else if (bytes >= 1024LL * 1024)
+        snprintf(buf, (size_t)buflen, "%.1f MB", (double)bytes / (1024.0 * 1024));
     else if (bytes >= 1024)
         snprintf(buf, (size_t)buflen, "%.0f KB", (double)bytes / 1024.0);
     else
-        snprintf(buf, (size_t)buflen, "%lu B", bytes);
+        snprintf(buf, (size_t)buflen, "%lld B", bytes);
 }

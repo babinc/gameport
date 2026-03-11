@@ -1,5 +1,5 @@
 #include "term.h"
-#include "platform.h"
+#include "../core/platform.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

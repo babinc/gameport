@@ -11,8 +11,8 @@ const char *acquire_str(AcquireMethod m) {
     case ACQUIRE_CARGO:    return "cargo";
     case ACQUIRE_GIT:      return "git";
     case ACQUIRE_DOWNLOAD: return "curl";
+    default: return "unknown";
     }
-    return "unknown";
 }
 
 /* ── Platform detection ───────────────────────────────────────── */
