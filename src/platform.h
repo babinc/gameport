@@ -62,8 +62,8 @@ void plat_kill_by_name(const char *bin);
 
 #define TERM_ALT_SCREEN_ON   "\033[?1049h\033[?25l"   /* alt screen + hide cursor */
 #define TERM_ALT_SCREEN_OFF  "\033[?25h\033[?1049l\033[0m"  /* show cursor + main screen + reset attrs */
-#define TERM_ALT_SCREEN_ON_LEN  16
-#define TERM_ALT_SCREEN_OFF_LEN 20
+#define TERM_ALT_SCREEN_ON_LEN  (sizeof(TERM_ALT_SCREEN_ON) - 1)
+#define TERM_ALT_SCREEN_OFF_LEN (sizeof(TERM_ALT_SCREEN_OFF) - 1)
 
 /* ── Terminal ────────────────────────────────────────────────── */
 

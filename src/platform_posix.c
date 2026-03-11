@@ -37,9 +37,9 @@ static void set_raw_mode(void) {
 
 void plat_term_init(void) {
     tcgetattr(STDIN_FILENO, &orig_termios);
+    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_ON_LEN));
     set_raw_mode();
     raw_mode_on = 1;
-    ignore_write(write(STDOUT_FILENO, TERM_ALT_SCREEN_ON, TERM_ALT_SCREEN_ON_LEN));
 }
 
 void plat_term_cleanup(void) {
