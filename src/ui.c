@@ -101,7 +101,9 @@ void app_init(App *app) {
     app->filtered = malloc((size_t)(NUM_GAMES + NUM_CATEGORIES) * sizeof(int));
     app->toolchains = toolchains_detect();
     memset(&app->child.proc, 0, sizeof(app->child.proc));
+#ifndef _WIN32
     app->child.proc.pipe_fd = -1;
+#endif
     app->mode = MODE_NORMAL;
     app->panel_label = "INSTALLING";
     app_refresh(app);
