@@ -16,11 +16,11 @@ static const char *keys[] = {
 
 static const char *build[] = {
     "bash", "-c",
-    "set -e && make all -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
+    "set -e && cd src && make all -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)",
     NULL
 };
 
-static const char *play[] = {"./prince", NULL};
+static const char *play[] = {"./src/prince", NULL};
 
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "libsdl2-image-dev", NULL};
