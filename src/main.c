@@ -124,6 +124,14 @@ static void launch_game(App *app, Screen *scr, int *w, int *h) {
     } else {
         cmd[ci++] = resolved ? resolved : src->bin;
     }
+    /* AppImages need --appimage-extract-and-run to work without FUSE */
+    int is_appimage = 0;
+    if (src->url) {
+        size_t ulen = strlen(src->url);
+        is_appimage = (ulen > 9 && strcmp(src->url + ulen - 9, ".AppImage") == 0);
+    }
+    if (is_appimage && ci < 15)
+        cmd[ci++] = "--appimage-extract-and-run";
     cmd[ci] = NULL;
 
     if (is_terminal) {
