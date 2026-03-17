@@ -23,11 +23,11 @@ static const char *build[] = {
 static const char *play[] = {"./build/speed-dreams", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libopenscenegraph-dev",
-    "libcurl4-gnutls-dev", "libsdl2-dev", "libsdl2-mixer-dev",
+    "libcurl4-openssl-dev", "libsdl2-dev", "libsdl2-mixer-dev",
     "libplib-dev", "libopenal-dev", "libenet-dev",
     "libminizip-dev", "librhash-dev", NULL};
 static const char *linux_check[] = {"bash", "-c",
-    "dpkg -s libopenscenegraph-dev libsdl2-dev libsdl2-mixer-dev libcurl4-gnutls-dev cmake >/dev/null 2>&1", NULL};
+    "dpkg -s libopenscenegraph-dev libsdl2-dev libsdl2-mixer-dev libcurl4-openssl-dev cmake >/dev/null 2>&1", NULL};
 
 static const PlatformDeps deps[] = {
     { "linux", "cmake libopenscenegraph-dev libsdl2-dev libsdl2-mixer-dev ...", linux_install, linux_check, 1 },
