@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(open-game-portal VERSION 0.5.3 LANGUAGES C)
+project(open-game-portal VERSION 0.5.4 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
