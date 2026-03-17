@@ -23,7 +23,7 @@ static const char *build[] = {
 static const char *play[] = {"./build/speed-dreams", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libopenscenegraph-dev",
-    "libcurl4-openssl-dev", "libsdl2-dev", "libsdl2-mixer-dev",
+    "libcurl4-openssl-dev", "libsdl2-dev", "libsdl2-mixer-dev", "libsdl2-ttf-dev",
     "libplib-dev", "libopenal-dev", "libenet-dev",
     "libminizip-dev", "librhash-dev", "libglm-dev",
     "libtinygltf-dev", "libcjson-dev", NULL};
