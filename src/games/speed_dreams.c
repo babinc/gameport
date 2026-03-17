@@ -17,6 +17,7 @@ static const char *build[] = {
     "git submodule update --init --recursive\n"
     "cmake -B build -DCMAKE_BUILD_TYPE=Release\n"
     "cmake --build build -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)\n"
+    "cp -a build/lib/games lib/\n"
     "echo 'Done!'",
     NULL
 };
