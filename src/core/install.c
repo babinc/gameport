@@ -161,6 +161,11 @@ void child_cleanup(ChildProc *cp) {
 int run_visible(const char **cmd, const char *cwd) {
     term_restore();
     int ok = plat_run_inherit(cmd, cwd);
+    if (!ok) {
+        fprintf(stderr, "\n[Press Enter to continue]");
+        fflush(stderr);
+        while (getchar() != '\n') {}
+    }
     term_reenter();
     return ok;
 }
