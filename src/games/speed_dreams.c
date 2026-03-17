@@ -11,16 +11,35 @@ static const char *keys[] = {
     NULL
 };
 
-static const char *play[] = {"./speed-dreams", NULL};
+static const char *build[] = {
+    "bash", "-c",
+    "set -e\n"
+    "git submodule update --init --recursive\n"
+    "cmake -B build -DCMAKE_BUILD_TYPE=Release\n"
+    "cmake --build build -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)\n"
+    "echo 'Done!'",
+    NULL
+};
+static const char *play[] = {"./build/speed-dreams", NULL};
+static const char *linux_install[] = {"sudo", "apt", "install", "-y",
+    "build-essential", "cmake", "libopenscenegraph-dev",
+    "libcurl4-gnutls-dev", "libsdl2-dev", "libsdl2-mixer-dev",
+    "libplib-dev", "libopenal-dev", "libenet-dev",
+    "libminizip-dev", "librhash-dev", NULL};
+static const char *linux_check[] = {"bash", "-c",
+    "dpkg -s libopenscenegraph-dev libsdl2-dev libsdl2-mixer-dev libcurl4-gnutls-dev cmake >/dev/null 2>&1", NULL};
+
+static const PlatformDeps deps[] = {
+    { "linux", "cmake libopenscenegraph-dev libsdl2-dev libsdl2-mixer-dev ...", linux_install, linux_check, 1 },
+};
 
 static const Source sources[] = {{
-    .method = ACQUIRE_DOWNLOAD,
-    .label = "Download AppImage (~500 MB)",
+    .method = ACQUIRE_GIT, .label = "Build from source (git + cmake + SDL2)",
     .platforms = PLAT_LINUX,
-    .url = "https://files.speed-dreams.net/public/speed-dreams-v2.4.2-x86_64.AppImage",
-    .dir = "speed-dreams",
+    .url = "https://forge.a-lec.org/speed-dreams/speed-dreams-code.git",
+    .dir = "speed-dreams", .shallow = 1,
+    .build_cmd = build, .play_cmd = play,
     .bin = "speed-dreams",
-    .play_cmd = play,
 }};
 
 static const Game game_data = {
@@ -29,7 +48,7 @@ static const Game game_data = {
     .keys = keys, .category = "Racing",
     .engine = "TORCS (OpenGL)", .website = "https://www.speed-dreams.net/",
     .repo = "https://forge.a-lec.org/speed-dreams/speed-dreams-code",
-    .platforms = PLAT_LINUX,
+    .platforms = PLAT_LINUX, .platform_deps = deps, .num_platform_deps = 1,
     .sources = sources, .num_sources = 1,
 };
 
