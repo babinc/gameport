@@ -20,7 +20,7 @@ static const char *build[] = {
     "echo 'Done!'",
     NULL
 };
-static const char *play[] = {"./build/speed-dreams", NULL};
+static const char *play[] = {"./build/games/speed-dreams-2", NULL};
 static const char *linux_install[] = {"sudo", "apt", "install", "-y",
     "build-essential", "cmake", "libopenscenegraph-dev",
     "libcurl4-openssl-dev", "libsdl2-dev", "libsdl2-mixer-dev", "libsdl2-ttf-dev",
@@ -40,7 +40,7 @@ static const Source sources[] = {{
     .url = "https://forge.a-lec.org/speed-dreams/speed-dreams-code.git",
     .dir = "speed-dreams", .shallow = 1,
     .build_cmd = build, .play_cmd = play,
-    .bin = "speed-dreams",
+    .bin = "speed-dreams-2",
 }};
 
 static const Game game_data = {
