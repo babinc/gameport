@@ -14,6 +14,7 @@ static const char *keys[] = {
 };
 
 static const char *play[] = {"java", "-jar", "Mindustry.jar", NULL};
+static const char *check_java[] = {"java", "-version", NULL};
 
 static const Source sources[] = {{
     .method = ACQUIRE_DOWNLOAD,
@@ -21,6 +22,7 @@ static const Source sources[] = {{
     .url = "https://github.com/Anuken/Mindustry/releases/download/v146/Mindustry.jar",
     .dir = "mindustry",
     .bin = "Mindustry.jar",
+    .build_cmd = check_java,
     .play_cmd = play,
 }};
 

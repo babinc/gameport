@@ -8,24 +8,71 @@
 #include <direct.h>     /* _mkdir */
 #include <io.h>         /* _access */
 #include <windows.h>
-#include <tlhelp32.h>   /* CreateToolhelp32Snapshot */
 
 /* ── Helpers ─────────────────────────────────────────────────── */
 
-/* Build a flat command-line string from NULL-terminated argv.
-   Quotes arguments containing spaces. */
-static void build_cmdline(char *out, size_t outlen, const char **cmd) {
+enum { WINDOWS_CMDLINE_MAX = 32767 };
+
+static int cmdline_putc(char *out, size_t outlen, size_t *pos, char ch) {
+    if (*pos + 1 >= outlen) return 0;
+    out[(*pos)++] = ch;
+    out[*pos] = '\0';
+    return 1;
+}
+
+/* Quote one argv element using the parsing rules used by Windows C runtimes.
+   In particular, quotes inside PowerShell -Command scripts must survive
+   CreateProcess and reach the child as literal quote characters. */
+static int cmdline_append_arg(char *out, size_t outlen, size_t *pos,
+                              const char *arg) {
+    int needs_quote = !arg[0] || strpbrk(arg, " \t\n\v\"") != NULL;
+    if (!needs_quote) {
+        while (*arg) {
+            if (!cmdline_putc(out, outlen, pos, *arg++)) return 0;
+        }
+        return 1;
+    }
+
+    if (!cmdline_putc(out, outlen, pos, '"')) return 0;
+    while (*arg) {
+        size_t backslashes = 0;
+        while (*arg == '\\') {
+            backslashes++;
+            arg++;
+        }
+
+        if (*arg == '"') {
+            /* Double preceding backslashes, then escape the quote. */
+            for (size_t i = 0; i < backslashes * 2 + 1; i++)
+                if (!cmdline_putc(out, outlen, pos, '\\')) return 0;
+            if (!cmdline_putc(out, outlen, pos, *arg++)) return 0;
+        } else {
+            /* Backslashes only need doubling immediately before the closing
+               quote, where they would otherwise escape it. */
+            size_t count = *arg ? backslashes : backslashes * 2;
+            for (size_t i = 0; i < count; i++)
+                if (!cmdline_putc(out, outlen, pos, '\\')) return 0;
+            if (*arg && !cmdline_putc(out, outlen, pos, *arg++)) return 0;
+        }
+    }
+    return cmdline_putc(out, outlen, pos, '"');
+}
+
+/* Build a flat command line from a NULL-terminated argv. The Windows limit
+   includes the terminating NUL, so reject commands that cannot fit. */
+static char *build_cmdline(const char **cmd) {
+    size_t pos = 0;
+    char *out = malloc(WINDOWS_CMDLINE_MAX);
+    if (!out) return NULL;
     out[0] = '\0';
     for (int i = 0; cmd[i]; i++) {
-        if (i > 0 && strlen(out) < outlen - 2)
-            strcat(out, " ");
-        int needs_quote = (strchr(cmd[i], ' ') != NULL);
-        if (needs_quote && strlen(out) < outlen - 2)
-            strcat(out, "\"");
-        strncat(out, cmd[i], outlen - strlen(out) - 1);
-        if (needs_quote && strlen(out) < outlen - 2)
-            strcat(out, "\"");
+        if ((i > 0 && !cmdline_putc(out, WINDOWS_CMDLINE_MAX, &pos, ' ')) ||
+            !cmdline_append_arg(out, WINDOWS_CMDLINE_MAX, &pos, cmd[i])) {
+            free(out);
+            return NULL;
+        }
     }
+    return out;
 }
 
 /* ── Terminal ────────────────────────────────────────────────── */
@@ -167,6 +214,7 @@ void plat_term_write(const char *buf, size_t len) {
 int plat_proc_spawn(PlatProc *p, const char **cmd, const char *cwd) {
     p->process = NULL;
     p->pipe_read = NULL;
+    p->job = NULL;
 
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
     HANDLE pipe_read, pipe_write;
@@ -177,8 +225,12 @@ int plat_proc_spawn(PlatProc *p, const char **cmd, const char *cwd) {
     SetHandleInformation(pipe_read, HANDLE_FLAG_INHERIT, 0);
 
     /* Build command line */
-    char cmdline[8192];
-    build_cmdline(cmdline, sizeof(cmdline), cmd);
+    char *cmdline = build_cmdline(cmd);
+    if (!cmdline) {
+        CloseHandle(pipe_read);
+        CloseHandle(pipe_write);
+        return -1;
+    }
 
     STARTUPINFOA si;
     memset(&si, 0, sizeof(si));
@@ -193,9 +245,10 @@ int plat_proc_spawn(PlatProc *p, const char **cmd, const char *cwd) {
 
     BOOL ok = CreateProcessA(
         NULL, cmdline, NULL, NULL, TRUE,
-        CREATE_NO_WINDOW, NULL, cwd,
+        CREATE_NO_WINDOW | CREATE_SUSPENDED, NULL, cwd,
         &si, &pi);
 
+    free(cmdline);
     CloseHandle(pipe_write);
 
     if (!ok) {
@@ -203,9 +256,27 @@ int plat_proc_spawn(PlatProc *p, const char **cmd, const char *cwd) {
         return -1;
     }
 
+    /* A job lets cancellation terminate the complete operation tree (for
+       example PowerShell -> cmake -> MSBuild), not only its immediate parent. */
+    HANDLE job = CreateJobObjectA(NULL, NULL);
+    if (job && !AssignProcessToJobObject(job, pi.hProcess)) {
+        CloseHandle(job);
+        job = NULL;
+    }
+    if (ResumeThread(pi.hThread) == (DWORD)-1) {
+        if (job) TerminateJobObject(job, 1);
+        else TerminateProcess(pi.hProcess, 1);
+        if (job) CloseHandle(job);
+        CloseHandle(pi.hThread);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pipe_read);
+        return -1;
+    }
+
     CloseHandle(pi.hThread);
     p->process   = pi.hProcess;
     p->pipe_read = pipe_read;
+    p->job       = job;
     return 0;
 }
 
@@ -253,9 +324,9 @@ void plat_proc_join(PlatProc *p, int *ok) {
 
 void plat_proc_kill(PlatProc *p) {
     if (!p->process) return;
-    TerminateProcess(p->process, 1);
+    if (p->job) TerminateJobObject(p->job, 1);
+    else TerminateProcess(p->process, 1);
     WaitForSingleObject(p->process, 3000); /* wait up to 3s for termination */
-    p->process = NULL;
 }
 
 void plat_proc_close(PlatProc *p) {
@@ -267,13 +338,17 @@ void plat_proc_close(PlatProc *p) {
         CloseHandle(p->process);
         p->process = NULL;
     }
+    if (p->job) {
+        CloseHandle(p->job);
+        p->job = NULL;
+    }
 }
 
 /* ── Synchronous process helpers ─────────────────────────────── */
 
 int plat_run_inherit(const char **cmd, const char *cwd) {
-    char cmdline[8192];
-    build_cmdline(cmdline, sizeof(cmdline), cmd);
+    char *cmdline = build_cmdline(cmd);
+    if (!cmdline) return 0;
 
     STARTUPINFOA si;
     memset(&si, 0, sizeof(si));
@@ -282,8 +357,11 @@ int plat_run_inherit(const char **cmd, const char *cwd) {
     PROCESS_INFORMATION pi;
     memset(&pi, 0, sizeof(pi));
 
-    if (!CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, cwd, &si, &pi))
+    if (!CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, cwd, &si, &pi)) {
+        free(cmdline);
         return 0;
+    }
+    free(cmdline);
 
     WaitForSingleObject(pi.hProcess, INFINITE);
     DWORD exitCode = 1;
@@ -294,8 +372,8 @@ int plat_run_inherit(const char **cmd, const char *cwd) {
 }
 
 int plat_run_silent(const char **cmd, const char *cwd) {
-    char cmdline[8192];
-    build_cmdline(cmdline, sizeof(cmdline), cmd);
+    char *cmdline = build_cmdline(cmd);
+    if (!cmdline) return 0;
 
     /* Open NUL device for output suppression */
     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
@@ -315,6 +393,7 @@ int plat_run_silent(const char **cmd, const char *cwd) {
 
     BOOL ok = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE,
                              CREATE_NO_WINDOW, NULL, cwd, &si, &pi);
+    free(cmdline);
     if (nul != INVALID_HANDLE_VALUE) CloseHandle(nul);
 
     if (!ok) return 0;
@@ -325,36 +404,6 @@ int plat_run_silent(const char **cmd, const char *cwd) {
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
     return exitCode == 0 ? 1 : 0;
-}
-
-void plat_kill_by_name(const char *bin) {
-    /* Enumerate all processes and kill matching ones */
-    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snap == INVALID_HANDLE_VALUE) return;
-
-    PROCESSENTRY32 pe;
-    pe.dwSize = sizeof(pe);
-
-    /* Build expected exe name: "bin.exe" */
-    char target[MAX_PATH];
-    snprintf(target, sizeof(target), "%s", bin);
-    /* Append .exe if not already present */
-    size_t tlen = strlen(target);
-    if (tlen < 4 || (_stricmp(target + tlen - 4, ".exe") != 0))
-        strncat(target, ".exe", sizeof(target) - tlen - 1);
-
-    if (Process32First(snap, &pe)) {
-        do {
-            if (_stricmp(pe.szExeFile, target) == 0) {
-                HANDLE proc = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
-                if (proc) {
-                    TerminateProcess(proc, 1);
-                    CloseHandle(proc);
-                }
-            }
-        } while (Process32Next(snap, &pe));
-    }
-    CloseHandle(snap);
 }
 
 /* ── Filesystem ──────────────────────────────────────────────── */

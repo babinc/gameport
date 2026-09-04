@@ -19,6 +19,7 @@
 typedef struct {
     HANDLE process;
     HANDLE pipe_read;
+    HANDLE job;
 } PlatProc;
 #else
 #include <sys/types.h>
@@ -57,9 +58,6 @@ int  plat_run_inherit(const char **cmd, const char *cwd);
 
 /*   Run with output suppressed (blocking). Returns 1=success. */
 int  plat_run_silent(const char **cmd, const char *cwd);
-
-/*   Kill a process by binary name. */
-void plat_kill_by_name(const char *bin);
 
 /* ── Terminal escape sequences ────────────────────────────────── */
 

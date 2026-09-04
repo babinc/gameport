@@ -49,7 +49,4 @@ int  run_visible(const char **cmd, const char *cwd);
 /* Free a malloc'd command array. */
 void free_cmd(char **cmd);
 
-/* Kill a game process by binary name. */
-void kill_game_process(const char *bin);
-
 #endif

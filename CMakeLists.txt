@@ -42,6 +42,20 @@ endif()
 # Windows-specific settings
 if(WIN32)
     target_compile_definitions(open-game-portal PRIVATE _CRT_SECURE_NO_WARNINGS)
+
+    include(CTest)
+    if(BUILD_TESTING)
+        add_executable(platform-win32-test
+            tests/platform_win32_test.c
+            src/core/platform_win32.c
+        )
+        target_compile_definitions(platform-win32-test PRIVATE _CRT_SECURE_NO_WARNINGS)
+        target_compile_options(platform-win32-test PRIVATE
+            $<$<C_COMPILER_ID:GNU,Clang>:-Wall -Wextra -pedantic>
+            $<$<C_COMPILER_ID:MSVC>:/W4>
+        )
+        add_test(NAME platform-win32-command-line COMMAND platform-win32-test)
+    endif()
 endif()
 
 # Install target

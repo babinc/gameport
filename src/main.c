@@ -83,6 +83,16 @@ static const char *source_cwd(const Source *src, char *buf, size_t buflen) {
     return NULL;
 }
 
+static int path_parent(const char *path, char *buf, size_t buflen) {
+    snprintf(buf, buflen, "%s", path);
+    char *slash = strrchr(buf, '/');
+    char *backslash = strrchr(buf, '\\');
+    char *last = backslash && (!slash || backslash > slash) ? backslash : slash;
+    if (!last) return 0;
+    *last = '\0';
+    return 1;
+}
+
 /* ── Game launch helper ──────────────────────────────────────── */
 
 static void launch_game(App *app, Screen *scr, int *w, int *h) {
@@ -109,13 +119,25 @@ static void launch_game(App *app, Screen *scr, int *w, int *h) {
                        strcmp(g->engine, "ncurses") == 0);
 
     const char *cmd[16];
-    char cwd_buf[PATHBUF];
+    char cwd_buf[PATHBUF], resolved_cwd[PATHBUF];
     const char *cwd = source_cwd(src, cwd_buf, sizeof(cwd_buf));
     int ci = 0;
 
     /* Try to resolve the play binary; if the hardcoded path is wrong,
        search the game directory for the executable */
+    int expected_at_cwd = 0;
+    if (cwd && src->play_cmd && src->play_cmd[0]) {
+        char expected[PATHBUF];
+        snprintf(expected, sizeof(expected), "%s/%s", cwd, src->play_cmd[0]);
+        expected_at_cwd = plat_file_exists(expected);
+    }
     char *resolved = resolve_play_binary(src, cwd);
+    if (resolved && cwd && !expected_at_cwd &&
+        path_parent(resolved, resolved_cwd, sizeof(resolved_cwd))) {
+        /* ZIP archives often contain one top-level wrapper directory. Keep
+           portable games' asset-relative paths anchored beside the binary. */
+        cwd = resolved_cwd;
+    }
 
     if (src->play_cmd && src->play_cmd[0]) {
         for (int i = 0; src->play_cmd[i] && ci < 15; i++)
@@ -265,6 +287,23 @@ static void start_local_remove(App *app, const Source *src) {
     app->child.done = 1;
 }
 
+#ifdef _WIN32
+/* Encode text inside a PowerShell single-quoted literal. PowerShell escapes
+   an apostrophe by doubling it. */
+static int ps_single_quote(const char *in, char *out, size_t outlen) {
+    size_t pos = 0;
+    while (*in) {
+        size_t needed = *in == '\'' ? 2 : 1;
+        if (pos + needed >= outlen) return 0;
+        out[pos++] = *in;
+        if (*in == '\'') out[pos++] = '\'';
+        in++;
+    }
+    out[pos] = '\0';
+    return 1;
+}
+#endif
+
 static void start_download_acquire(App *app, const Source *src) {
     char *gdir = games_dir();
     char game_path[PATHBUF];
@@ -275,11 +314,25 @@ static void start_download_acquire(App *app, const Source *src) {
         chain_next(app, src->build_cmd, game_path);
     }
 
-    char script[4096];
+    char script[8192];
     const char *at = src->archive_type;
 
 #ifdef _WIN32
     /* ── Windows: PowerShell + curl.exe/tar.exe ──────────────── */
+    char ps_game_path[PATHBUF * 2], ps_dir[512], ps_url[2048], ps_bin[512];
+    if (!ps_single_quote(game_path, ps_game_path, sizeof(ps_game_path)) ||
+        !ps_single_quote(src->dir, ps_dir, sizeof(ps_dir)) ||
+        !ps_single_quote(src->url, ps_url, sizeof(ps_url)) ||
+        !ps_single_quote(src->bin, ps_bin, sizeof(ps_bin))) {
+        const char *error_cmd[] = {
+            "powershell", "-NoProfile", "-Command",
+            "Write-Error 'Install values exceed safe PowerShell limits'; exit 1",
+            NULL
+        };
+        child_start(&app->child, error_cmd, NULL);
+        free(gdir);
+        return;
+    }
     int is_tar = at && (strcmp(at, "tar.gz") == 0 ||
                         strcmp(at, "tar.bz2") == 0 ||
                         strcmp(at, "tar.xz") == 0);
@@ -289,22 +342,31 @@ static void start_download_acquire(App *app, const Source *src) {
             "New-Item -ItemType Directory -Force -Path '%s' | Out-Null\n"
             "Write-Host 'Downloading %s...'\n"
             "$dl = Join-Path $env:TEMP ('gp_dl_' + [System.IO.Path]::GetRandomFileName() + '.tar')\n"
-            "curl.exe -fSL '%s' -o $dl\n"
-            "tar.exe xf $dl -C '%s' --strip-components=1\n"
-            "Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
+            "try {\n"
+            "  curl.exe -fSL '%s' -o $dl\n"
+            "  if ($LASTEXITCODE -ne 0) { throw \"curl failed: $LASTEXITCODE\" }\n"
+            "  tar.exe xf $dl -C '%s' --strip-components=1\n"
+            "  if ($LASTEXITCODE -ne 0) { throw \"tar failed: $LASTEXITCODE\" }\n"
+            "} finally {\n"
+            "  Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
+            "}\n"
             "Write-Host 'Done!'",
-            game_path, src->dir, src->url, game_path);
+            ps_game_path, ps_dir, ps_url, ps_game_path);
     } else if (at && strcmp(at, "zip") == 0) {
         snprintf(script, sizeof(script),
             "$ErrorActionPreference='Stop'\n"
             "New-Item -ItemType Directory -Force -Path '%s' | Out-Null\n"
             "$dl = Join-Path $env:TEMP ('gp_dl_' + [System.IO.Path]::GetRandomFileName() + '.zip')\n"
             "Write-Host 'Downloading %s...'\n"
-            "curl.exe -fSL -o $dl '%s'\n"
-            "Expand-Archive -Path $dl -DestinationPath '%s' -Force\n"
-            "Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
+            "try {\n"
+            "  curl.exe -fSL -o $dl '%s'\n"
+            "  if ($LASTEXITCODE -ne 0) { throw \"curl failed: $LASTEXITCODE\" }\n"
+            "  Expand-Archive -Path $dl -DestinationPath '%s' -Force\n"
+            "} finally {\n"
+            "  Remove-Item $dl -Force -ErrorAction SilentlyContinue\n"
+            "}\n"
             "Write-Host 'Done!'",
-            game_path, src->dir, src->url, game_path);
+            ps_game_path, ps_dir, ps_url, ps_game_path);
     } else {
         /* Raw binary / exe download */
         snprintf(script, sizeof(script),
@@ -312,9 +374,10 @@ static void start_download_acquire(App *app, const Source *src) {
             "New-Item -ItemType Directory -Force -Path '%s' | Out-Null\n"
             "Write-Host 'Downloading %s...'\n"
             "curl.exe -fSL -o '%s\\%s' '%s'\n"
+            "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n"
             "Write-Host 'Done!'",
-            game_path, src->dir,
-            game_path, src->bin, src->url);
+            ps_game_path, ps_dir,
+            ps_game_path, ps_bin, ps_url);
     }
     const char *cmd[] = {"powershell", "-NoProfile", "-Command", script, NULL};
 #else
@@ -380,7 +443,6 @@ static void begin_install(App *app, const Source *src) {
 }
 
 static void begin_uninstall(App *app, const Source *src) {
-    kill_game_process(src->bin);
     switch (src->method) {
     case ACQUIRE_CARGO:    start_cargo_uninstall(app, src); break;
     case ACQUIRE_GIT:      start_local_remove(app, src);      break;

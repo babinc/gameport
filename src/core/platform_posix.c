@@ -220,18 +220,6 @@ int plat_run_silent(const char **cmd, const char *cwd) {
     return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
-void plat_kill_by_name(const char *bin) {
-    pid_t pid = fork();
-    if (pid == 0) {
-        int fd = open("/dev/null", O_WRONLY);
-        if (fd >= 0) { dup2(fd, STDOUT_FILENO); dup2(fd, STDERR_FILENO); close(fd); }
-        execlp("pkill", "pkill", "-f", bin, NULL);
-        _exit(127);
-    }
-    int status;
-    waitpid(pid, &status, 0);
-}
-
 /* ── Filesystem ──────────────────────────────────────────────── */
 
 int plat_file_exists(const char *path) {

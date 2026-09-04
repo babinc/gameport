@@ -175,7 +175,3 @@ void free_cmd(char **cmd) {
     for (int i = 0; cmd[i]; i++) free(cmd[i]);
     free(cmd);
 }
-
-void kill_game_process(const char *bin) {
-    plat_kill_by_name(bin);
-}

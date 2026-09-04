@@ -86,6 +86,15 @@ int deps_check_satisfied(const PlatformDeps *deps) {
     return plat_run_silent(deps->check_cmd, NULL);
 }
 
+/* Extract the basename from a path (e.g., "./bin/foo" -> "foo") */
+static const char *basename_of(const char *path) {
+    const char *last_slash = strrchr(path, '/');
+    const char *last_bslash = strrchr(path, '\\');
+    if (last_bslash && (!last_slash || last_bslash > last_slash))
+        last_slash = last_bslash;
+    return last_slash ? last_slash + 1 : path;
+}
+
 /* ── Install marker (.ogp_installed) ─────────────────────────── */
 
 static void marker_path(const Source *src, char *buf, size_t buflen) {
@@ -134,11 +143,18 @@ int is_installed(const Game *g) {
 
         if (plat_file_exists(marker)) return 1;
 
-        /* Migration: if game dir exists but no marker, write one.
-           Covers games installed before marker system was added. */
+        /* Migration: only accept an old unmarked directory when it contains
+           the expected binary. A clone or partial download alone is not a
+           completed install. */
         if (plat_file_exists(dir_path)) {
-            mark_installed(src);
-            return 1;
+            char *found = src->bin
+                ? plat_find_executable(dir_path, basename_of(src->bin))
+                : NULL;
+            if (found) {
+                free(found);
+                mark_installed(src);
+                return 1;
+            }
         }
         return 0;
     }
@@ -147,15 +163,6 @@ int is_installed(const Game *g) {
 }
 
 /* ── Play binary resolution ──────────────────────────────────── */
-
-/* Extract the basename from a path (e.g., "./bin/foo" → "foo") */
-static const char *basename_of(const char *path) {
-    const char *last_slash = strrchr(path, '/');
-    const char *last_bslash = strrchr(path, '\\');
-    if (last_bslash && (!last_slash || last_bslash > last_slash))
-        last_slash = last_bslash;
-    return last_slash ? last_slash + 1 : path;
-}
 
 char *resolve_play_binary(const Source *src, const char *cwd) {
     if (!src->play_cmd || !src->play_cmd[0]) return NULL;
@@ -171,7 +178,7 @@ char *resolve_play_binary(const Source *src, const char *cwd) {
     if (cwd) {
         char full[PATHBUF];
         snprintf(full, sizeof(full), "%s/%s", cwd, cmd0);
-        if (plat_file_exists(full)) return NULL; /* path is fine */
+        if (plat_file_exists(full)) return strdup(full);
     }
 
     /* Binary not found — search the game directory */
